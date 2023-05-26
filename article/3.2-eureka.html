@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+<link rel="stylesheet" href="/_assets/main.css" />
+
+    <title>3.2 高可用Eureka注册中心 - Joplin Note By BlueLvRen</title>
+  <link rel="stylesheet" href="/_markdown_plugin_assets/highlight.js/atom-one-light.css" /></head>
+  <body>
+    <div class="main">
+      <nav class="navigation">
+        <a href="/">Joplin Note By BlueLvRen</a>
+      </nav>
+      <article>
+        <header>
+          <h1 class="article-title">3.2 高可用Eureka注册中心</h1>
+          <div class="article-info">
+            <div>
+              <span
+                >Created At：<time datetime="1685002643058"
+                  >2023-05-25 16:17</time
+                ></span
+              >
+              <span
+                >Updated At：<time datetime="1685067340456"
+                  >2023-05-26 10:15</time
+                ></span
+              >
+            </div>
+            
+          </div>
+        </header>
+        <div class="article-content markdown-body"><h1 id="多注册中心">多注册中心</h1>
+<h2 id="注册中心eureka-server01">注册中心eureka-server01</h2>
+<h3 id="创建项目">创建项目</h3>
+<p>在刚才的父工程下再创建一个<code>eureka-server01</code>注册中心的项目，如果是多机器部署不用修改端口，通过IP区分服务，如果在一台机器上演示则需要修改端口区分服务。</p>
+<h3 id="添加依赖">添加依赖</h3>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span> <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-server01<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>jar<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">name</span>&gt;</span>eureka-server01<span class="hljs-tag">&lt;/<span class="hljs-name">name</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!--  继承父依赖  --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot web 依赖 --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  netflix eureka server 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-server<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span></code></pre></div>
+<h3 id="配置文件">配置文件</h3>
+<p>application.yml:</p>
+<div><pre class="hljs"><code><span class="hljs-attr">server:</span>
+  <span class="hljs-attr">port:</span> <span class="hljs-number">8762</span> <span class="hljs-comment"># 端口</span>
+<span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">application:</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">eureka-server</span> <span class="hljs-comment"># 应用名称</span>
+<span class="hljs-comment"># 配置Eureka Server 注册中心</span>
+<span class="hljs-attr">eureka:</span>
+  <span class="hljs-attr">instance:</span>
+    <span class="hljs-attr">hostname:</span> <span class="hljs-string">eureka01</span>           <span class="hljs-comment"># 主机名，不配置的时候将根据操作系统的主机名来获取</span>
+  <span class="hljs-attr">client:</span>
+    <span class="hljs-comment"># 设置服务注册中心地址，指向另一个注册中心</span>
+    <span class="hljs-attr">service-url:</span>                  <span class="hljs-comment"># 注册中心对外暴露的注册地址</span>
+      <span class="hljs-attr">defaultZone:</span> <span class="hljs-string">http://localhost:8763/eureka/</span></code></pre></div>
+<h2 id="注册中心eureka-server02">注册中心eureka-server02</h2>
+<h3 id="创建项目-2">创建项目</h3>
+<p>在刚才的父工程下再创建一个<code>eureka-server01</code>注册中心的项目，如果是多机器部署不用修改端口，通过IP区分服务，如果在一台机器上演示则需要修改端口区分服务。</p>
+<h3 id="添加依赖-2">添加依赖</h3>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span> <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-server02<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>jar<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">name</span>&gt;</span>eureka-server02<span class="hljs-tag">&lt;/<span class="hljs-name">name</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!--  继承父依赖  --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot web 依赖 --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  netflix eureka server 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-server<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span></code></pre></div>
+<h3 id="配置文件-2">配置文件</h3>
+<p>application.yml:</p>
+<div><pre class="hljs"><code><span class="hljs-attr">server:</span>
+  <span class="hljs-attr">port:</span> <span class="hljs-number">8763</span> <span class="hljs-comment"># 端口</span>
+<span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">application:</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">eureka-server</span> <span class="hljs-comment"># 应用名称</span>
+<span class="hljs-comment"># 配置Eureka Server 注册中心</span>
+<span class="hljs-attr">eureka:</span>
+  <span class="hljs-attr">instance:</span>
+    <span class="hljs-attr">hostname:</span> <span class="hljs-string">eureka02</span>           <span class="hljs-comment"># 主机名，不配置的时候将根据操作系统的主机名来获取</span>
+  <span class="hljs-attr">client:</span>
+    <span class="hljs-comment"># 设置服务注册中心地址，指向另一个注册中心</span>
+    <span class="hljs-attr">service-url:</span> <span class="hljs-comment"># 注册中心对外暴露的注册地址</span>
+      <span class="hljs-attr">defaultZone:</span> <span class="hljs-string">http://localhost:8762/eureka/</span></code></pre></div>
+<h2 id="启动并访问">启动并访问</h2>
+<p>访问http://localhost:8762（或http://localhost:8763）<br />
+<img src="/_resources/717a1cce34f54c149ca532c3516402ad.png" /></p>
+<p>注意到两个注册中心互相注册成功。</p>
+<h2 id="显示ip端口">显示ip+端口</h2>
+<p>一个普通的Netflix Eureka实例注册的ID等于其主机名（即，每个主机仅提供一项服务）。Spring Cloud Eureka提供了合理的默认值，定义如下：<br />
+<code>${spring.cloud.client.hostname}:${spring.application.name}:${spring.application.instance_id:${server.port}}</code>，也就是<code>主机名：应用名：应用端口</code>。</p>
+<p>我们也可以自定义进行修改：</p>
+<div><pre class="hljs"><code><span class="hljs-attr">eureka:</span>
+    <span class="hljs-attr">instance:</span>
+        <span class="hljs-attr">prefer-ip-address:</span> <span class="hljs-literal">true</span>		<span class="hljs-comment"># 是否使用ip地址注册</span>
+        <span class="hljs-attr">instance-id:</span> <span class="hljs-string">${spring.cloud.client.ip-address}:${server.port}</span> <span class="hljs-comment"># ip:port</span></code></pre></div>
+<p>再次访问展示如下：<br />
+<img src="/_resources/2c7a034444db406cbaba2d38b7f6102e.png" /></p>
+<h2 id="服务提供者eureka-provider">服务提供者eureka-provider</h2>
+<h3 id="添加依赖-3">添加依赖</h3>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span> <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-provider<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>jar<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">name</span>&gt;</span>eureka-provider<span class="hljs-tag">&lt;/<span class="hljs-name">name</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring eureka client 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot web 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  lombok依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.projectlombok<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>lombok<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>provided<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot test 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-test<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>test<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">exclusions</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">exclusion</span>&gt;</span>
+                    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.junit.vintage<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+                    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>junit-vintage-engine<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+                <span class="hljs-tag">&lt;/<span class="hljs-name">exclusion</span>&gt;</span>
+            <span class="hljs-tag">&lt;/<span class="hljs-name">exclusions</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span></code></pre></div>
+<h3 id="配置文件-3">配置文件</h3>
+<p>application.yml:</p>
+<div><pre class="hljs"><code><span class="hljs-attr">server:</span>
+  <span class="hljs-attr">port:</span> <span class="hljs-number">7070</span>
+<span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">application:</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">service-provider</span> <span class="hljs-comment"># 应用名称(集群下相同)</span>
+<span class="hljs-comment"># 配置Eureka Server注册中心</span>
+<span class="hljs-attr">eureka:</span>
+  <span class="hljs-attr">instance:</span>
+    <span class="hljs-attr">prefer-ip-address:</span> <span class="hljs-literal">true</span> <span class="hljs-comment"># 是否使用ip地址注册</span>
+    <span class="hljs-attr">instance-id:</span> <span class="hljs-string">${spring.cloud.client.ip-address}:${server.port}</span> <span class="hljs-comment"># ip:port</span>
+  <span class="hljs-attr">client:</span>
+    <span class="hljs-attr">service-url:</span> <span class="hljs-comment"># 设置服务注册中心地址</span>
+      <span class="hljs-attr">defaultZone:</span> <span class="hljs-string">http://localhost:8762/eureka/,http://localhost:8763/eureka/</span></code></pre></div>
+<h3 id="启动类代码">启动类代码</h3>
+<p>ServiceProviderApplication.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example;
+
+<span class="hljs-keyword">import</span> org.springframework.boot.SpringApplication;
+<span class="hljs-keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;
+
+<span class="hljs-comment">// 开启EurekaClient注解，目前版本如果配置了Eureka注册中心，默认会开启@EnableEurekaClient</span>
+<span class="hljs-comment">// @EnableEurekaClient</span>
+<span class="hljs-meta">@SpringBootApplication</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ServiceProviderApplication</span> {
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> {
+        SpringApplication.run(ServiceProviderApplication.class, args);
+    }
+}</code></pre></div>
+<h3 id="其他部分代码">其他部分代码</h3>
+<p>Product.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.pojo;
+
+
+<span class="hljs-keyword">import</span> lombok.AllArgsConstructor;
+<span class="hljs-keyword">import</span> lombok.Data;
+<span class="hljs-keyword">import</span> lombok.NoArgsConstructor;
+
+<span class="hljs-keyword">import</span> java.io.Serializable;
+
+<span class="hljs-meta">@Data</span>
+<span class="hljs-meta">@NoArgsConstructor</span>
+<span class="hljs-meta">@AllArgsConstructor</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Product</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> {
+
+    <span class="hljs-keyword">private</span> Integer id;
+    <span class="hljs-keyword">private</span> String productName;
+    <span class="hljs-keyword">private</span> Integer productNum;
+    <span class="hljs-keyword">private</span> Double productPrice;
+}</code></pre></div>
+<p>ProductService.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.service;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Product;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Service;
+
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-comment">/**
+ * 商品服务
+ * */</span>
+<span class="hljs-meta">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">ProductService</span> {
+    <span class="hljs-comment">/**
+     * 查询商品列表
+     *
+     * <span class="hljs-doctag">@return</span>
+     * */</span>
+    List&lt;Product&gt; <span class="hljs-title function_">selectProductList</span><span class="hljs-params">()</span>;
+}</code></pre></div>
+<p>ProductServiceImpl:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.service.impl;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Product;
+<span class="hljs-keyword">import</span> org.example.service.ProductService;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Service;
+
+<span class="hljs-keyword">import</span> java.util.Arrays;
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-meta">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ProductServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ProductService</span> {
+    <span class="hljs-comment">/**
+     * 查询商品列表
+     *
+     * <span class="hljs-doctag">@return</span>
+     * */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> List&lt;Product&gt; <span class="hljs-title function_">selectProductList</span><span class="hljs-params">()</span> {
+        <span class="hljs-keyword">return</span> Arrays.asList(
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">Product</span>(<span class="hljs-number">1</span>, <span class="hljs-string">"华为手机"</span>, <span class="hljs-number">2</span>, <span class="hljs-number">5888D</span>),
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">Product</span>(<span class="hljs-number">2</span>, <span class="hljs-string">"联想笔记本"</span>, <span class="hljs-number">1</span>, <span class="hljs-number">6888D</span>),
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">Product</span>(<span class="hljs-number">3</span>, <span class="hljs-string">"小米平板"</span>, <span class="hljs-number">5</span>, <span class="hljs-number">2666D</span>)
+        );
+    }
+}</code></pre></div>
+<p>ProductController.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.controller;
+
+
+<span class="hljs-keyword">import</span> org.example.pojo.Product;
+<span class="hljs-keyword">import</span> org.example.service.ProductService;
+<span class="hljs-keyword">import</span> org.springframework.beans.factory.annotation.Autowired;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.GetMapping;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.RequestMapping;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.RestController;
+
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-meta">@RestController</span>
+<span class="hljs-meta">@RequestMapping("/product")</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ProductController</span> {
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> ProductService productService;
+
+    <span class="hljs-comment">/**
+     * 查询商品列表
+     *
+     * return
+     * */</span>
+    <span class="hljs-meta">@GetMapping("/list")</span>
+    <span class="hljs-keyword">public</span> List&lt;Product&gt; <span class="hljs-title function_">selectProductList</span><span class="hljs-params">()</span> {
+        <span class="hljs-keyword">return</span> productService.selectProductList();
+    }
+
+}</code></pre></div>
+<h3 id="启动">启动</h3>
+<p>注册中心启动后，再启动服务提供者，访问http://localhost:8762(或者http://localhost:8763)<br />
+<img src="/_resources/da3b4a00c7d446ac86d52ae941ced735.png" /></p>
+<p>可以看到eureka-provider服务顺利注册到服务注册中心。</p>
+<h3 id="测试">测试</h3>
+<p>访问http://localhost:7070/product/list</p>
+<h2 id="服务消费者eureka-consumer">服务消费者eureka-consumer</h2>
+<h3 id="添加依赖-4">添加依赖</h3>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span> <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-consumer<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>jar<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">name</span>&gt;</span>eureka-consumer<span class="hljs-tag">&lt;/<span class="hljs-name">name</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring eureka client 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot web 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  lombok依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.projectlombok<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>lombok<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>provided<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot test 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-test<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>test<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">exclusions</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">exclusion</span>&gt;</span>
+                    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.junit.vintage<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+                    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>junit-vintage-engine<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+                <span class="hljs-tag">&lt;/<span class="hljs-name">exclusion</span>&gt;</span>
+            <span class="hljs-tag">&lt;/<span class="hljs-name">exclusions</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span></code></pre></div>
+<h3 id="配置文件-4">配置文件</h3>
+<p>application.yml:</p>
+<div><pre class="hljs"><code><span class="hljs-attr">server:</span>
+  <span class="hljs-attr">port:</span> <span class="hljs-number">9090</span>
+<span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">application:</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">service-consumer</span> <span class="hljs-comment"># 应用名称(集群下相同)</span>
+<span class="hljs-comment"># 配置Eureka Server注册中心</span>
+<span class="hljs-attr">eureka:</span>
+<span class="hljs-comment">#  此处为了做演示，与生产情况有所简化，不将消费者服务注册到注册中心</span>
+<span class="hljs-comment">#  instance:</span>
+<span class="hljs-comment">#    prefer-ip-address: true # 是否使用ip地址注册</span>
+<span class="hljs-comment">#    instance-id: ${spring.cloud.client.ip-address}:${server.port} # ip:port</span>
+<span class="hljs-comment">#  client:</span>
+<span class="hljs-comment">#    service-url: # 设置服务注册中心地址</span>
+<span class="hljs-comment">#      defaultZone: http://localhost:8762/eureka/,http://localhost:8763/eureka/</span>
+ <span class="hljs-attr">client:</span>
+   <span class="hljs-attr">register-with-eureka:</span> <span class="hljs-literal">false</span>          <span class="hljs-comment"># 是否将自己注册到注册中心，默认为true</span>
+   <span class="hljs-attr">registry-fetch-interval-seconds:</span> <span class="hljs-number">10</span>  <span class="hljs-comment"># 表示Eureka Client间隔多久去服务器拉取注册信息，默认为30s</span>
+   <span class="hljs-attr">service-url:</span>                         <span class="hljs-comment"># 设置服务注册中心地址</span>
+     <span class="hljs-attr">defaultZone:</span> <span class="hljs-string">http://localhost:8762/eureka/,http://localhost:8763/eureka/</span></code></pre></div>
+<h3 id="启动类代码-2">启动类代码</h3>
+<p>ServiceConsumerApplication.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example;
+
+<span class="hljs-keyword">import</span> org.springframework.boot.SpringApplication;
+<span class="hljs-keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;
+<span class="hljs-keyword">import</span> org.springframework.context.annotation.Bean;
+<span class="hljs-keyword">import</span> org.springframework.web.client.RestTemplate;
+
+<span class="hljs-comment">// 开启EurekaClient注解，目前版本如果配置了Eureka注册中心，默认会开启@EnableEurekaClient</span>
+<span class="hljs-comment">// @EnableEurekaClient</span>
+<span class="hljs-meta">@SpringBootApplication</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ServiceConsumerApplication</span> {
+    <span class="hljs-meta">@Bean</span>
+    <span class="hljs-keyword">public</span> RestTemplate <span class="hljs-title function_">restTemplate</span><span class="hljs-params">()</span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RestTemplate</span>();
+    }
+
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> {
+        SpringApplication.run(ServiceConsumerApplication.class, args);
+    }
+}</code></pre></div>
+<blockquote>
+<p>Spring Boot不提供任何自动配置的<code>RestTemplate Bean</code>，所以需要在启动类中注入<code>RestTemplate</code></p>
+</blockquote>
+<h3 id="实体层代码">实体层代码</h3>
+<p>Product.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.pojo;
+
+
+<span class="hljs-keyword">import</span> lombok.AllArgsConstructor;
+<span class="hljs-keyword">import</span> lombok.Data;
+<span class="hljs-keyword">import</span> lombok.NoArgsConstructor;
+
+<span class="hljs-keyword">import</span> java.io.Serializable;
+
+<span class="hljs-meta">@Data</span>
+<span class="hljs-meta">@NoArgsConstructor</span>
+<span class="hljs-meta">@AllArgsConstructor</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Product</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> {
+
+    <span class="hljs-keyword">private</span> Integer id;
+    <span class="hljs-keyword">private</span> String productName;
+    <span class="hljs-keyword">private</span> Integer productNum;
+    <span class="hljs-keyword">private</span> Double productPrice;
+}</code></pre></div>
+<p>Order.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.pojo;
+
+<span class="hljs-keyword">import</span> lombok.AllArgsConstructor;
+<span class="hljs-keyword">import</span> lombok.Data;
+<span class="hljs-keyword">import</span> lombok.NoArgsConstructor;
+
+<span class="hljs-keyword">import</span> java.io.Serializable;
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-meta">@Data</span>
+<span class="hljs-meta">@NoArgsConstructor</span>
+<span class="hljs-meta">@AllArgsConstructor</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Order</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> {
+
+    <span class="hljs-keyword">private</span> Integer id;
+    <span class="hljs-keyword">private</span> String orderNo;
+    <span class="hljs-keyword">private</span> String orderAddress;
+    <span class="hljs-keyword">private</span> Double totalPrice;
+    <span class="hljs-keyword">private</span> List&lt;Product&gt; productList;
+}</code></pre></div>
+<h3 id="服务层代码">服务层代码</h3>
+<p>OrderService:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.service;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Order;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Service;
+
+<span class="hljs-meta">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">OrderService</span> {
+
+    <span class="hljs-comment">/**
+     * 根据主键查询订单
+     *
+     * <span class="hljs-doctag">@param</span> id
+     * <span class="hljs-doctag">@return</span>
+     */</span>
+    Order <span class="hljs-title function_">selectOrderById</span><span class="hljs-params">(Integer id)</span>;
+}</code></pre></div>
+<h4 id="discoveryclientresttemplate">DiscoveryClient+RestTemplate</h4>
+<blockquote>
+<p>DiscoveryClient是Spring Cloud提供的服务发现客户端，用于与服务注册中心交互，获取可用的服务实例列表<br />
+RestTemplate是Spring提供的一个HTTP请求工具，使用Java自带的HttpUrlConnection或者经典的HttpClient也可以完成需求，只是在Spring项目中，使用RestTemplate显然更方便一些<br />
+在传统的项目架构中，因为不涉及服务之间的调用，对于RestTemplate的使用可能比较少</p>
+</blockquote>
+<p>OrderServiceImpl:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.service.impl;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Order;
+<span class="hljs-keyword">import</span> org.example.pojo.Product;
+<span class="hljs-keyword">import</span> org.example.service.OrderService;
+<span class="hljs-keyword">import</span> org.springframework.beans.factory.annotation.Autowired;
+<span class="hljs-keyword">import</span> org.springframework.cloud.client.ServiceInstance;
+<span class="hljs-keyword">import</span> org.springframework.cloud.client.discovery.DiscoveryClient;
+<span class="hljs-keyword">import</span> org.springframework.core.ParameterizedTypeReference;
+<span class="hljs-keyword">import</span> org.springframework.http.HttpMethod;
+<span class="hljs-keyword">import</span> org.springframework.http.ResponseEntity;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Service;
+<span class="hljs-keyword">import</span> org.springframework.util.CollectionUtils;
+<span class="hljs-keyword">import</span> org.springframework.web.client.RestTemplate;
+
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-meta">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">OrderService</span> {
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> RestTemplate restTemplate;
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> DiscoveryClient discoveryClient;
+
+    <span class="hljs-comment">/**
+     * 根据主键查询订单
+     *
+     * <span class="hljs-doctag">@param</span> id
+     * <span class="hljs-doctag">@return</span>
+     */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> Order <span class="hljs-title function_">selectOrderById</span><span class="hljs-params">(Integer id)</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Order</span>(id, <span class="hljs-string">"order-001"</span>, <span class="hljs-string">"中国"</span>, <span class="hljs-number">31994D</span>,
+                selectProductListByDiscoveryClient());
+    }
+
+    <span class="hljs-keyword">private</span> List&lt;Product&gt; <span class="hljs-title function_">selectProductListByDiscoveryClient</span><span class="hljs-params">()</span> {
+        <span class="hljs-type">StringBuffer</span> <span class="hljs-variable">sb</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+
+        <span class="hljs-comment">// 获取服务列表</span>
+        List&lt;String&gt; serviceIds = discoveryClient.getServices();
+        <span class="hljs-keyword">if</span> (CollectionUtils.isEmpty(serviceIds)){
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        }
+
+        <span class="hljs-comment">// 根据服务名称获取服务</span>
+        List&lt;ServiceInstance&gt; serviceInstances = discoveryClient.getInstances(<span class="hljs-string">"service-provider"</span>);
+        <span class="hljs-keyword">if</span> (CollectionUtils.isEmpty(serviceInstances)){
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        }
+
+        <span class="hljs-type">ServiceInstance</span> <span class="hljs-variable">si</span> <span class="hljs-operator">=</span> serviceInstances.get(<span class="hljs-number">0</span>);
+        sb = <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuffer</span>();
+        sb.append(<span class="hljs-string">"http://"</span> + si.getHost() + <span class="hljs-string">":"</span> + si.getPort() + <span class="hljs-string">"/product/list"</span>);
+
+        <span class="hljs-comment">// ResponseEntity：封装了返回数据</span>
+        ResponseEntity&lt;List&lt;Product&gt;&gt; response = restTemplate.exchange(
+                sb.toString(),
+                HttpMethod.GET,
+                <span class="hljs-literal">null</span>,
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">ParameterizedTypeReference</span>&lt;List&lt;Product&gt;&gt;() {}
+        );
+
+        <span class="hljs-keyword">return</span> response.getBody();
+    }
+}</code></pre></div>
+<h4 id="loadbalancerclient">LoadBalancerClient</h4>
+<p>OrderServiceImpl.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.service.impl;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Order;
+<span class="hljs-keyword">import</span> org.example.pojo.Product;
+<span class="hljs-keyword">import</span> org.example.service.OrderService;
+<span class="hljs-keyword">import</span> org.springframework.beans.factory.annotation.Autowired;
+<span class="hljs-keyword">import</span> org.springframework.cloud.client.ServiceInstance;
+<span class="hljs-keyword">import</span> org.springframework.cloud.client.discovery.DiscoveryClient;
+<span class="hljs-keyword">import</span> org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+<span class="hljs-keyword">import</span> org.springframework.core.ParameterizedTypeReference;
+<span class="hljs-keyword">import</span> org.springframework.http.HttpMethod;
+<span class="hljs-keyword">import</span> org.springframework.http.ResponseEntity;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Service;
+<span class="hljs-keyword">import</span> org.springframework.util.CollectionUtils;
+<span class="hljs-keyword">import</span> org.springframework.web.client.RestTemplate;
+
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-meta">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">OrderService</span> {
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> RestTemplate restTemplate;
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> DiscoveryClient discoveryClient;
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> LoadBalancerClient loadBalancerClient;
+
+    <span class="hljs-comment">/**
+     * 根据主键查询订单
+     *
+     * <span class="hljs-doctag">@param</span> id
+     * <span class="hljs-doctag">@return</span>
+     */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> Order <span class="hljs-title function_">selectOrderById</span><span class="hljs-params">(Integer id)</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Order</span>(id, <span class="hljs-string">"order-001"</span>, <span class="hljs-string">"中国"</span>, <span class="hljs-number">31994D</span>,
+<span class="hljs-comment">//                selectProductListByDiscoveryClient());</span>
+                selectProductListByLoadBalancerClient());
+    }
+
+    <span class="hljs-keyword">private</span> List&lt;Product&gt; <span class="hljs-title function_">selectProductListByDiscoveryClient</span><span class="hljs-params">()</span> {
+        <span class="hljs-type">StringBuffer</span> <span class="hljs-variable">sb</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+
+        <span class="hljs-comment">// 获取服务列表</span>
+        List&lt;String&gt; serviceIds = discoveryClient.getServices();
+        <span class="hljs-keyword">if</span> (CollectionUtils.isEmpty(serviceIds)){
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        }
+
+        <span class="hljs-comment">// 根据服务名称获取服务</span>
+        List&lt;ServiceInstance&gt; serviceInstances = discoveryClient.getInstances(<span class="hljs-string">"service-provider"</span>);
+        <span class="hljs-keyword">if</span> (CollectionUtils.isEmpty(serviceInstances)){
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        }
+
+        <span class="hljs-type">ServiceInstance</span> <span class="hljs-variable">si</span> <span class="hljs-operator">=</span> serviceInstances.get(<span class="hljs-number">0</span>);
+        sb = <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuffer</span>();
+        sb.append(<span class="hljs-string">"http://"</span> + si.getHost() + <span class="hljs-string">":"</span> + si.getPort() + <span class="hljs-string">"/product/list"</span>);
+
+        <span class="hljs-comment">// ResponseEntity：封装了返回数据</span>
+        ResponseEntity&lt;List&lt;Product&gt;&gt; response = restTemplate.exchange(
+                sb.toString(),
+                HttpMethod.GET,
+                <span class="hljs-literal">null</span>,
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">ParameterizedTypeReference</span>&lt;List&lt;Product&gt;&gt;() {}
+        );
+
+        <span class="hljs-keyword">return</span> response.getBody();
+    }
+
+    <span class="hljs-keyword">private</span> List&lt;Product&gt; <span class="hljs-title function_">selectProductListByLoadBalancerClient</span><span class="hljs-params">()</span>{
+        <span class="hljs-type">StringBuffer</span> <span class="hljs-variable">sb</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+
+        <span class="hljs-comment">// 根据服务名称获取服务</span>
+        <span class="hljs-type">ServiceInstance</span> <span class="hljs-variable">si</span> <span class="hljs-operator">=</span> loadBalancerClient.choose(<span class="hljs-string">"service-provider"</span>);
+        <span class="hljs-keyword">if</span> (<span class="hljs-literal">null</span> == si){
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        }
+
+        sb = <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuffer</span>();
+        sb.append(<span class="hljs-string">"http://"</span> + si.getHost() + <span class="hljs-string">":"</span> + si.getPort() + <span class="hljs-string">"/product/list"</span>);
+
+        <span class="hljs-comment">// ResponseEntity: 封装了返回数据</span>
+        ResponseEntity&lt;List&lt;Product&gt;&gt; response = restTemplate.exchange(
+                sb.toString(),
+                HttpMethod.GET,
+                <span class="hljs-literal">null</span>,
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">ParameterizedTypeReference</span>&lt;List&lt;Product&gt;&gt;() {}
+        );
+        <span class="hljs-keyword">return</span> response.getBody();
+    }
+}</code></pre></div>
+<h4 id="loadbalanced">@LoadBalanced</h4>
+<p>启动类注入<code>RestTemplate</code>时添加<code>@LoadBalanced</code>负载均衡注解，表示这个<code>RestTemplate</code>在请求时拥有客户端负载均衡的能力。<br />
+ServiceConsumerApplication.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example;
+
+<span class="hljs-keyword">import</span> org.springframework.boot.SpringApplication;
+<span class="hljs-keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;
+<span class="hljs-keyword">import</span> org.springframework.context.annotation.Bean;
+<span class="hljs-keyword">import</span> org.springframework.web.client.RestTemplate;
+
+<span class="hljs-comment">// 开启EurekaClient注解，目前版本如果配置了Eureka注册中心，默认会开启@EnableEurekaClient</span>
+<span class="hljs-comment">// @EnableEurekaClient</span>
+<span class="hljs-meta">@SpringBootApplication</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ServiceConsumerApplication</span> {
+    <span class="hljs-meta">@Bean</span>
+    <span class="hljs-meta">@LoadBalanced</span> <span class="hljs-comment">// 负载均衡注解</span>
+    <span class="hljs-keyword">public</span> RestTemplate <span class="hljs-title function_">restTemplate</span><span class="hljs-params">()</span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RestTemplate</span>();
+    }
+
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> {
+        SpringApplication.run(ServiceConsumerApplication.class, args);
+    }
+}</code></pre></div>
+<h3 id="控制层代码">控制层代码</h3>
+<p>OrderController.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.controller;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Order;
+<span class="hljs-keyword">import</span> org.example.service.OrderService;
+<span class="hljs-keyword">import</span> org.springframework.beans.factory.annotation.Autowired;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.GetMapping;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.PathVariable;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.RequestMapping;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.RestController;
+
+<span class="hljs-meta">@RestController</span>
+<span class="hljs-meta">@RequestMapping("/order")</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderController</span> {
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> OrderService orderService;
+
+    <span class="hljs-comment">/**
+     * 根据主键查询订单
+     *
+     * <span class="hljs-doctag">@param</span> id
+     * <span class="hljs-doctag">@return</span>
+     */</span>
+    <span class="hljs-meta">@GetMapping("/{id}")</span>
+    <span class="hljs-keyword">public</span> Order <span class="hljs-title function_">selectOrderById</span><span class="hljs-params">(<span class="hljs-meta">@PathVariable</span> (<span class="hljs-string">"id"</span>)</span> Integer id) {
+        <span class="hljs-keyword">return</span> orderService.selectOrderById(id);
+    }
+}</code></pre></div>
+<h3 id="启动-2">启动</h3>
+<p>访问http://localhost:9090/product/1<br />
+<img src="/_resources/5531534efbe64790a66f96e3e3027805.png" /></p>
+</div>
+      </article>
+    </div>
+  </body>
+</html>

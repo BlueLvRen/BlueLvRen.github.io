@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+<link rel="stylesheet" href="/_assets/main.css" />
+
+    <title>3.1 Eureka服务注册中心 - Joplin Note By BlueLvRen</title>
+  <link rel="stylesheet" href="/_markdown_plugin_assets/highlight.js/atom-one-light.css" /></head>
+  <body>
+    <div class="main">
+      <nav class="navigation">
+        <a href="/">Joplin Note By BlueLvRen</a>
+      </nav>
+      <article>
+        <header>
+          <h1 class="article-title">3.1 Eureka服务注册中心</h1>
+          <div class="article-info">
+            <div>
+              <span
+                >Created At：<time datetime="1684976527699"
+                  >2023-05-25 09:02</time
+                ></span
+              >
+              <span
+                >Updated At：<time datetime="1685015756760"
+                  >2023-05-25 19:55</time
+                ></span
+              >
+            </div>
+            
+          </div>
+        </header>
+        <div class="article-content markdown-body"><h1 id="什么是eureka注册中心">什么是Eureka注册中心</h1>
+<p>Eureka是Netflix开发的服务发现组件，本身是一个基于REST的服务，Spring Cloud将它集成在其子项目Spring Cloud Netflix中，实现Spring Cloud的服务注册与发现，同时还提供了负载均衡、故障转移等能力。</p>
+<h1 id="eureka注册中心三种角色">Eureka注册中心三种角色</h1>
+<p><img src="/_resources/31bdad2214fe4552b9ef46c426fab7b4.png" /></p>
+<h2 id="eureka-server">Eureka Server</h2>
+<p>通过Register、Get、Renew等接口提供服务的注册和发现。</p>
+<h2 id="application-serviceservice-provide">Application Service(Service Provide)</h2>
+<p>服务提供方，把自身的服务实例注册到Eureka Server中。</p>
+<h2 id="application-clientservice-consumer">Application Client(Service Consumer)</h2>
+<p>服务调用方，通过Eureka Server获取服务列表、消费服务。</p>
+<p><img src="/_resources/baa948984792497094c0fc2b820f2418.png" /><br />
+0. 实例化服务</p>
+<ol>
+<li>将服务注册到注册中心</li>
+<li>注册中心收录服务</li>
+<li>从注册中心获取服务列表</li>
+<li>基于负载均衡算法从地址列表选择一个服务地址进行服务调用</li>
+<li>定期发送心跳</li>
+<li>检查没有定期发送心跳的服务并在一定时间内剔除服务地址列表</li>
+</ol>
+<h1 id="eureka入门案例">Eureka入门案例</h1>
+<h2 id="查看环境要求">查看环境要求</h2>
+<blockquote>
+<p>查看Spring Cloud对于Spring Boot的版本号要求</p>
+</blockquote>
+<p><img src="/_resources/1495b7b8804c4982877e95c8b39363e5.png" /></p>
+<p><img src="/_resources/4b751bc10b074641aef1e58f5119e1ea.png" /></p>
+<blockquote>
+<p>查看Spring Boot对于Maven和jdk的版本号要求</p>
+</blockquote>
+<p><img src="/_resources/af783753dcf243c1b23d7f0148b40057.png" /></p>
+<p><img src="/_resources/783fcc3bfdd94408aac8810481f979ce.png" /></p>
+<p><img src="/_resources/ce97c494b08a437a8ecacdd9de37cebe.png" /></p>
+<h2 id="创建项目">创建项目</h2>
+<p><img src="/_resources/08256c13be9546bcb373207854b37f47.png" /></p>
+<blockquote>
+<p>运行时jdk版本选用了8，因为19报错了（不知道谁不支持，暂时还没排查</p>
+</blockquote>
+<h2 id="添加依赖">添加依赖</h2>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-meta">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span>
+         <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">modules</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">module</span>&gt;</span>eureka-server<span class="hljs-tag">&lt;/<span class="hljs-name">module</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">modules</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">properties</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">maven.compiler.source</span>&gt;</span>8<span class="hljs-tag">&lt;/<span class="hljs-name">maven.compiler.source</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">maven.compiler.target</span>&gt;</span>8<span class="hljs-tag">&lt;/<span class="hljs-name">maven.compiler.target</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">project.build.sourceEncoding</span>&gt;</span>UTF-8<span class="hljs-tag">&lt;/<span class="hljs-name">project.build.sourceEncoding</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">spring-cloud.version</span>&gt;</span>2022.0.2<span class="hljs-tag">&lt;/<span class="hljs-name">spring-cloud.version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">properties</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>3.0.5<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">relativePath</span>/&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!--  项目依赖管理 父项目只是声明依赖，子项目需要写明需要的依赖（可以省略版本信息）  --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencyManagement</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+                <span class="hljs-comment">&lt;!--  spring cloud依赖  --&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>${spring-cloud.version}<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">type</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">type</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>import<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+            <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencyManagement</span>&gt;</span>
+
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span></code></pre></div>
+<blockquote>
+<p>此处重点在于Spring Boot的版本要与Spring Cloud兼容！！！</p>
+</blockquote>
+<h2 id="注册中心eureka-server">注册中心eureka-server</h2>
+<h3 id="创建项目-2">创建项目</h3>
+<p><img src="/_resources/8ceb87fe5a884f4a8e43934206e06548.png" /></p>
+<h3 id="添加依赖-2">添加依赖</h3>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span> <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-server<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>jar<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!--  继承父依赖  --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot web 依赖 --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  netflix eureka server 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-server<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span>
+</code></pre></div>
+<h3 id="配置文件">配置文件</h3>
+<p>application.yml:</p>
+<div><pre class="hljs"><code><span class="hljs-attr">server:</span>
+  <span class="hljs-attr">port:</span>  <span class="hljs-comment"># 端口</span>
+<span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">application:</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">eureka-server</span> <span class="hljs-comment"># 应用名称</span>
+
+<span class="hljs-comment"># 配置Eureka Server 注册中心</span>
+<span class="hljs-attr">eureka:</span>
+  <span class="hljs-attr">instance:</span>
+    <span class="hljs-attr">hostname:</span> <span class="hljs-string">localhost</span>           <span class="hljs-comment"># 主机名，不配置的时候将根据操作系统的主机名来获取</span>
+  <span class="hljs-attr">client:</span>
+    <span class="hljs-attr">register-with-eureka:</span> <span class="hljs-literal">false</span>   <span class="hljs-comment"># 是否将自己注册注册中心，默认为true</span>
+    <span class="hljs-attr">fetch-registry:</span> <span class="hljs-literal">false</span>         <span class="hljs-comment"># 是否从注册中心获取服务注册信息，默认为true</span>
+    <span class="hljs-attr">service-url:</span>                  <span class="hljs-comment"># 注册中心对外暴露的注册地址</span>
+      <span class="hljs-attr">defaultZone:</span> <span class="hljs-string">http://${eureka.instance.hostname}:${server.port}/eureka/</span></code></pre></div>
+<p><code>Eureka</code>默认开启了将自己注册至注册中心和从注册中心获取服务注册信息的配置，如果该应用的角色是注册中心并且是单节点的话，要关闭这两个配置项。</p>
+<h3 id="启动类">启动类</h3>
+<p>EurekaServerApplication.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example;
+
+<span class="hljs-keyword">import</span> org.springframework.boot.SpringApplication;
+<span class="hljs-keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;
+<span class="hljs-keyword">import</span> org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
+
+<span class="hljs-meta">@EnableEurekaServer</span>
+<span class="hljs-meta">@SpringBootApplication</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">EurekaServerApplication</span> {
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> {
+        SpringApplication.run(EurekaServerApplication.class);
+    }
+}
+</code></pre></div>
+<h3 id="访问">访问</h3>
+<p>访问http://localhost:8761，看到页面如下表示访问注册中心管理页面成功：<br />
+<img src="/_resources/18cc4c29cb534df79b5142ca9d788300.png" /></p>
+</div>
+      </article>
+    </div>
+  </body>
+</html>

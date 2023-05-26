@@ -1,0 +1,348 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+<link rel="stylesheet" href="/_assets/main.css" />
+
+    <title>2 Spring Cloud简介 - Joplin Note By BlueLvRen</title>
+  </head>
+  <body>
+    <div class="main">
+      <nav class="navigation">
+        <a href="/">Joplin Note By BlueLvRen</a>
+      </nav>
+      <article>
+        <header>
+          <h1 class="article-title">2 Spring Cloud简介</h1>
+          <div class="article-info">
+            <div>
+              <span
+                >Created At：<time datetime="1684929079845"
+                  >2023-05-24 19:51</time
+                ></span
+              >
+              <span
+                >Updated At：<time datetime="1684977586734"
+                  >2023-05-25 09:19</time
+                ></span
+              >
+            </div>
+            
+          </div>
+        </header>
+        <div class="article-content markdown-body"><h1 id="概念定义">概念定义</h1>
+<p>Spring Cloud是一个服务治理平台，提供了一些服务框架。包含了：服务注册与发现、配置中心、消息中心、负载均衡、数据监控等。</p>
+<p>Spring Cloud是一个微服务框架，相比Dubbo等RPC框架，Spring Cloud提供了全套的分布式系统解决方案。</p>
+<p>Spring Cloud对微服务基础框架Netflix的多个开源组件进行了封装，同时又实现了和云端平台以及Spring Boot框架的集成。</p>
+<p>Spring Cloud是一个基于Spring Boot实现的云应用开发工具，它为开发中的配置管理、服务发现、断路器、智能路由、微代理、控制总线、全局锁、决策竞选、分布式会话和集群状态管理等操作提供了一种简单的开发方式。</p>
+<h1 id="子项目">子项目</h1>
+<p>Spring Cloud是一个开源的微服务框架，提供了一系列的子项目，这些子项目可以帮助开发人员构建、部署和管理分布式应用程序。其中，Spring Cloud Netflix和Spring Cloud Alibaba是最流行的两个子项目。</p>
+<h2 id="spring-cloud-netflix-第一代">Spring Cloud Netflix 第一代</h2>
+<blockquote>
+<p>Netflix是一家美国公司，在美国、加拿大提供互联网随选流媒体播放，定制DVD、蓝光光碟在线出租业务。该公司成立于1997年，总部位于加利福尼亚外州洛斯盖图，1999年开始订阅服务。2009年，该公司可提供多达10万部DVD电影，并有1千万的订户。2007年2月25日，Netflix宣布已经售出第10亿份DVD。HIS一份报告中表示，2011年Netflix网络电影销量占据美国用户在线电影总销量的45%。</p>
+</blockquote>
+<p>针对多种Netflix组件提供的开发工具包，其中包括Eureka、Hystrix、Ribbon、Zuul、Archaius等。</p>
+<ul>
+<li><code>Netflix Eureka</code>：一个基于REST服务的服务治理组件，包括服务注册中心、服务注册与服务发现机制的实现，实现了云端负载均衡和中间层服务器的故障转移。</li>
+<li><code>Netflix Hystrix</code>：容错管理工具，实现断路器模式，通过控制服务的节点，从而对延迟和故障提供更强大的容错能力</li>
+<li><code>Netflix Ribbon</code>：客户端负载均衡的服务调用组件</li>
+<li><code>Netflix Feign</code>：基于Ribbon和Hystrix的声明式服务调用组件</li>
+<li><code>Netflix Zuul</code>：微服务网关，提供动态路由，访问过滤等服务</li>
+<li><code>Netflix Archaius</code>：配置管理API，包含一系列配置管理API，提供动态类型化属性、线程安全配置操作、轮询框架、回调机制等功能</li>
+</ul>
+<h2 id="spring-cloud-alibaba-第二代">Spring Cloud Alibaba 第二代</h2>
+<p>Spring Cloud Alibaba致力于提供微服务开发的一站式解决方案。此项目包含开发分布式应用微服务的必需组件，方便开发者通过Spring Cloud编程模型轻松使用这些组件来开发分布式应用服务。</p>
+<p>依托Spring Cloud Alibaba，只需要添加一些注解和少量配置，就可以将Spring Cloud应用接入阿里微服务解决方案，通过阿里中间件来迅速搭建分布式应用系统。</p>
+<ul>
+<li><code>Nacos</code>：阿里巴巴开源产品，一个更易于构建云原生应用的动态服务发现、配置管理和服务管理平台</li>
+<li><code>Sentinel</code>：面向分布式服务架构的轻量级流量控制产品，把流量作为切入点，从流量控制、熔断降级、系统负载保护等多个维度保护服务的稳定性</li>
+<li><code>RocketMQ</code>：一款开源的分布式消息系统，基于高可用分布式集群技术，提供低延时的、高可靠的消息发布与订阅服务</li>
+<li><code>Dubbo</code>：Apache Dubbo是一款高性能Java RPC框架</li>
+<li><code>Seata</code>：阿里巴巴开源产品，一个易于使用的高性能微服务分布式事务解决方案</li>
+<li><code>Alibaba Cloud ACM</code>：一款在分布式架构环境中对应用配置进行集中管理和推送的应用配置中心产品</li>
+<li><code>Alibaba Cloud OSS</code>：阿里云对象存储服务（Object Storage Service，简称OSS），是阿里云提供的海量、安全、低成本、高可靠的云存储服务。开发者可以在任何应用、任何时间、任何地点存储和访问任意类型的数据</li>
+<li><code>Alibaba Cloud SchedulerX</code>：阿里中间件团队开发的一款分布式任务调度产品，提供秒级、精准、高可靠、高可用的定时（基于Cron表达式）任务调度服务</li>
+<li><code>Alibaba Cloud SMS</code>：覆盖全球的短信服务，友好、高效、智能的互联化通讯能力，帮助企业迅速搭建客户触达通道</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Spring Cloud Netflix</td>
+<td>Spring Cloud官方</td>
+<td>Spring Cloud Zookeeper</td>
+<td>Spring Cloud Consul</td>
+<td>Spring Cloud Kubernetes</td>
+<td>Spring Cloud Alibaba</td>
+</tr>
+<tr>
+<td>分布式配置</td>
+<td>Archaius</td>
+<td>Spring Cloud Config</td>
+<td>Zookeeper</td>
+<td>Consul</td>
+<td>ConfigMap</td>
+<td><strong>Nacos</strong></td>
+</tr>
+<tr>
+<td>服务注册/发现</td>
+<td>Eureka</td>
+<td>-</td>
+<td>Zookeeper</td>
+<td>-</td>
+<td>Api Server</td>
+<td><strong>Nacos</strong></td>
+</tr>
+<tr>
+<td>服务熔断</td>
+<td>Hystrix</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>Sentinel</strong></td>
+</tr>
+<tr>
+<td>服务调用</td>
+<td>Feign</td>
+<td>OpenFeign RestTemplate</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>Dubbo RPC</strong></td>
+</tr>
+<tr>
+<td>服务路由</td>
+<td>Zuul</td>
+<td>Spring Cloud Gateway</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>Dubbo PROXY</strong></td>
+</tr>
+<tr>
+<td>分布式消息</td>
+<td>-</td>
+<td>SCS RabbitMQ</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>SCS RocketMQ</strong></td>
+</tr>
+<tr>
+<td>负载均衡</td>
+<td>Ribbon</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>Dubbo LB</strong></td>
+</tr>
+<tr>
+<td>分布式事务</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>Seata</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="常用组件">常用组件</h2>
+<ul>
+<li><code>Spring Cloud Netflix Eureka</code>：服务注册中心</li>
+<li><code>Spring Cloud Netflix Ribbon</code>：客户端负载均衡</li>
+<li><code>Spring Cloud Netflix Hystrix</code>：服务容错保护</li>
+<li><code>Spring Cloud Netflix Feign</code>：声明式服务调用</li>
+<li><code>Spring Cloud OpenFeign（可替代Feign）</code>：OpenFeign是Spring Cloud在Feign的基础上支持了Spring MVC的注解，如@RequestMapping等。OpenFeign的@FeignClient可以解析SpringMVC的@RequestMapping注解下的接口，并通过动态代理的方式产生实现类，实现类中做负载均衡并调用其他服务。</li>
+<li><code>Spring Cloud Netflix Zuul</code>：API网关服务，过滤、安全、监控、限流、路由</li>
+<li><code>Spring Cloud Gateway（可替代Zuul）</code>：Spring Cloud Gateway是Spring官方基于Spring5.0，Spring Boot2.0和Project Reactor等技术开发的网关，Spring Cloud Gateway旨在为微服务架构提供一种简单而有效的统一的API路由管理方式。Spring Cloud Gateway作为Spring Cloud生态系中的网关，目标是替代Netflix Zuul，其不仅提供统一的路由方式，并且基于Filter链的方式提供了网关的基本功能，例如：安全、监控/埋点，和限流等</li>
+<li><code>Spring Cloud Config</code>：分布式配置中心。配置管理工具，支持使用Git存储配置内容，支持应用配置的外部化存储，支持客户端配置信息刷新、加解密配置内容等</li>
+<li><code>Spring Cloud Bus</code>：事件、消息总线，用于在集群（例如配置变化事件）中传播状态变化，可与Spring Cloud Config联合实现热部署</li>
+<li><code>Spring Cloud Stream</code>：消息驱动微服务</li>
+<li><code>Spring Cloud Sleuth</code>：分布式服务跟踪</li>
+<li><code>Spring Cloud Alibaba</code>：阿里巴巴结合自身微服务实践，开源的微服务全家桶。在Spring Cloud项目中孵化，很可能成为Spring Cloud第二代的标准实现。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Spring Cloud第一代</td>
+<td>状态</td>
+<td>Spring Cloud Alibaba</td>
+<td>状态</td>
+</tr>
+<tr>
+<td>Eureka</td>
+<td>2.0孵化失败</td>
+<td>Nacos Discovery</td>
+<td>性能强劲，感知更快</td>
+</tr>
+<tr>
+<td>Ribbon</td>
+<td>进入维护状态，预计2020年1月停止维护，新的标准已形成：Spring Cloud Loadbalancer，但暂无参考实现。Spring Cloud Hoxton才会孵化出替代品。</td>
+<td>Ribbon</td>
+<td>同前</td>
+</tr>
+<tr>
+<td>Hystrix/Hystrix Dashboard/Turbine</td>
+<td>进入维护状态，预计2020年1月停止维护</td>
+<td>Sentinel</td>
+<td>可视化配置，上手更简单</td>
+</tr>
+<tr>
+<td>Zuul</td>
+<td>进入维护状态，预计2020年1月停止维护</td>
+<td>Spring Cloud Gateway</td>
+<td>性能是Zuul的1.6倍</td>
+</tr>
+<tr>
+<td>Spring Cloud Config</td>
+<td>搭建复杂，约定多，设计繁重，没有界面，难以上手</td>
+<td>Nacos Config</td>
+<td>搭建简单，有可视化界面，配置管理更高效，学习曲线低</td>
+</tr>
+</tbody>
+</table>
+<h2 id="总结">总结</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Spring Cloud 第一代</td>
+<td>Spring Cloud 第二代</td>
+</tr>
+<tr>
+<td>网关</td>
+<td>Spring Cloud Zuul</td>
+<td>Spring Cloud Gateway</td>
+</tr>
+<tr>
+<td>注册中心</td>
+<td>Eureka，Consul，Zookeeper</td>
+<td>阿里Nacos，拍拍贷Radar等可选</td>
+</tr>
+<tr>
+<td>配置中心</td>
+<td>Spring Cloud Config</td>
+<td>阿里Nacos，携程Apollo，随行付Config Keeper</td>
+</tr>
+<tr>
+<td>客户端负载均衡</td>
+<td>Ribbon</td>
+<td>spring-cloud-commons的Spring Cloud LoadBalancer</td>
+</tr>
+<tr>
+<td>熔断器</td>
+<td>Hystrix</td>
+<td>spring-cloud-rsj(Resilience4J)，阿里Sentinel</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>虽然Eureka，Hystrix等不再继续开发或维护，但是目前来说不影响使用，不管怎么说感谢开源，向Netflix公司的开源致敬</p>
+</blockquote>
+<h1 id="版本说明">版本说明</h1>
+<p><img src="/_resources/23dd3782cf534a4aa1325af524e3c794.png" /></p>
+<h2 id="为什么spring-cloud版本用的是单词而不是数字">为什么Spring Cloud版本用的是单词而不是数字</h2>
+<blockquote>
+<p>从Spring Cloud 2020.0.0开始，官方决定将版本号改为基于日期的格式，例如2020.0.0.M1。这样做的好处是，可以更加直观地反映出版本的发布时间和更新频率，便于开发者选择合适的版本进行使用。同时，基于日期的版本号也能够避免版本号重复的问题，提高了版本管理的效率。</p>
+</blockquote>
+<p>这样设计的目的是为了更好地管理每个Spring Cloud的子项目的清单。避免总版本号与子项目的版本号混淆。</p>
+<blockquote>
+<p>Spring Cloud 2.2.0.RELEASE的Spring Cloud Netflix 2.2.2.RELEASE 如果使用这种方式会让开发者混淆版本号</p>
+</blockquote>
+<h2 id="定义规则">定义规则</h2>
+<p>采用伦敦的地铁站名称来作为版本号的命名，根据首字母排序，字母顺序靠后的版本号越大。<br />
+Spring官方详细的版本查看接口：<a title="https://start.spring.io/actuator/info" href="https://start.spring.io/actuator/info"></a></p>
+<h2 id="发布计划">发布计划</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>版本号</td>
+<td>版本</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>BUILD-XXX</td>
+<td>开发版</td>
+<td>开发团队内部使用</td>
+</tr>
+<tr>
+<td>M</td>
+<td>里程碑版</td>
+<td>MileStone，M1表示第一个里程碑版本，一般同时标注PRE，表示预览版</td>
+</tr>
+<tr>
+<td>RC</td>
+<td>候选发布版</td>
+<td>Release Candidate，正式发布版的前一个观察期，不添加新功能，主要着重于除错</td>
+</tr>
+<tr>
+<td>SR</td>
+<td>正式发布版</td>
+<td>Service Release，SR1表示第一个正式版本，一般同时标注GA，表示稳定版本</td>
+</tr>
+<tr>
+<td>GA</td>
+<td>稳定版</td>
+<td>经过全面测试并可对外发行称之为GA（General Availability）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="子项目版本说明">子项目版本说明</h2>
+<p>例如：Spring Cloud Alibaba 2.1.0.RELEASE</p>
+<ul>
+<li>2：主版本号。当功能模块有较大更新或整体架构发生变化时，主版本号会更新</li>
+<li>1：此版本号。此版本表示只有局部的一些改动</li>
+<li>0：修改版本号。一般是bug的修复或者是小的变动</li>
+<li>RELEASE：希腊字母版本号。标注当前版本的软件处于哪个开发阶段</li>
+</ul>
+<h3 id="希腊字母版本说明">希腊字母版本说明</h3>
+<ul>
+<li>Base：设计阶段。只有相应的设计没有具体的功能实现</li>
+<li>Alpha：软件的初级版本。存在较多的bug</li>
+<li>Beta：表示相对Alpha有了很大的进步，消除了严重的bug，还存在一些潜在的bug</li>
+<li>Gamma：是Beta版做过一些修改，成为正式发布的候选版本（Release Candidate）</li>
+<li>Release：该版本表示最终版</li>
+</ul>
+</div>
+      </article>
+    </div>
+  </body>
+</html>

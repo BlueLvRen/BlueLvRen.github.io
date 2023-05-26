@@ -1,0 +1,1589 @@
+<?xml version="1.0" encoding="utf-8"?>
+<rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:content="http://purl.org/rss/1.0/modules/content/">
+    <channel>
+        <title></title>
+        <link>undefined</link>
+        <description>undefined</description>
+        <lastBuildDate>Fri, 26 May 2023 07:09:04 GMT</lastBuildDate>
+        <docs>https://validator.w3.org/feed/docs/rss2.html</docs>
+        <generator>Joplin Pages Publisher</generator>
+        <item>
+            <title><![CDATA[3.2 高可用Eureka注册中心]]></title>
+            <guid>8a41dbd459134380b71c636421d6adae</guid>
+            <pubDate>Thu, 25 May 2023 08:17:23 GMT</pubDate>
+            <content:encoded><![CDATA[<h1 id="多注册中心">多注册中心</h1>
+<h2 id="注册中心eureka-server01">注册中心eureka-server01</h2>
+<h3 id="创建项目">创建项目</h3>
+<p>在刚才的父工程下再创建一个<code>eureka-server01</code>注册中心的项目，如果是多机器部署不用修改端口，通过IP区分服务，如果在一台机器上演示则需要修改端口区分服务。</p>
+<h3 id="添加依赖">添加依赖</h3>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span> <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-server01<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>jar<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">name</span>&gt;</span>eureka-server01<span class="hljs-tag">&lt;/<span class="hljs-name">name</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!--  继承父依赖  --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot web 依赖 --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  netflix eureka server 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-server<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span></code></pre></div>
+<h3 id="配置文件">配置文件</h3>
+<p>application.yml:</p>
+<div><pre class="hljs"><code><span class="hljs-attr">server:</span>
+  <span class="hljs-attr">port:</span> <span class="hljs-number">8762</span> <span class="hljs-comment"># 端口</span>
+<span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">application:</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">eureka-server</span> <span class="hljs-comment"># 应用名称</span>
+<span class="hljs-comment"># 配置Eureka Server 注册中心</span>
+<span class="hljs-attr">eureka:</span>
+  <span class="hljs-attr">instance:</span>
+    <span class="hljs-attr">hostname:</span> <span class="hljs-string">eureka01</span>           <span class="hljs-comment"># 主机名，不配置的时候将根据操作系统的主机名来获取</span>
+  <span class="hljs-attr">client:</span>
+    <span class="hljs-comment"># 设置服务注册中心地址，指向另一个注册中心</span>
+    <span class="hljs-attr">service-url:</span>                  <span class="hljs-comment"># 注册中心对外暴露的注册地址</span>
+      <span class="hljs-attr">defaultZone:</span> <span class="hljs-string">http://localhost:8763/eureka/</span></code></pre></div>
+<h2 id="注册中心eureka-server02">注册中心eureka-server02</h2>
+<h3 id="创建项目-2">创建项目</h3>
+<p>在刚才的父工程下再创建一个<code>eureka-server01</code>注册中心的项目，如果是多机器部署不用修改端口，通过IP区分服务，如果在一台机器上演示则需要修改端口区分服务。</p>
+<h3 id="添加依赖-2">添加依赖</h3>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span> <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-server02<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>jar<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">name</span>&gt;</span>eureka-server02<span class="hljs-tag">&lt;/<span class="hljs-name">name</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!--  继承父依赖  --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot web 依赖 --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  netflix eureka server 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-server<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span></code></pre></div>
+<h3 id="配置文件-2">配置文件</h3>
+<p>application.yml:</p>
+<div><pre class="hljs"><code><span class="hljs-attr">server:</span>
+  <span class="hljs-attr">port:</span> <span class="hljs-number">8763</span> <span class="hljs-comment"># 端口</span>
+<span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">application:</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">eureka-server</span> <span class="hljs-comment"># 应用名称</span>
+<span class="hljs-comment"># 配置Eureka Server 注册中心</span>
+<span class="hljs-attr">eureka:</span>
+  <span class="hljs-attr">instance:</span>
+    <span class="hljs-attr">hostname:</span> <span class="hljs-string">eureka02</span>           <span class="hljs-comment"># 主机名，不配置的时候将根据操作系统的主机名来获取</span>
+  <span class="hljs-attr">client:</span>
+    <span class="hljs-comment"># 设置服务注册中心地址，指向另一个注册中心</span>
+    <span class="hljs-attr">service-url:</span> <span class="hljs-comment"># 注册中心对外暴露的注册地址</span>
+      <span class="hljs-attr">defaultZone:</span> <span class="hljs-string">http://localhost:8762/eureka/</span></code></pre></div>
+<h2 id="启动并访问">启动并访问</h2>
+<p>访问http://localhost:8762（或http://localhost:8763）<br />
+<img src="/_resources/717a1cce34f54c149ca532c3516402ad.png" /></p>
+<p>注意到两个注册中心互相注册成功。</p>
+<h2 id="显示ip端口">显示ip+端口</h2>
+<p>一个普通的Netflix Eureka实例注册的ID等于其主机名（即，每个主机仅提供一项服务）。Spring Cloud Eureka提供了合理的默认值，定义如下：<br />
+<code>${spring.cloud.client.hostname}:${spring.application.name}:${spring.application.instance_id:${server.port}}</code>，也就是<code>主机名：应用名：应用端口</code>。</p>
+<p>我们也可以自定义进行修改：</p>
+<div><pre class="hljs"><code><span class="hljs-attr">eureka:</span>
+    <span class="hljs-attr">instance:</span>
+        <span class="hljs-attr">prefer-ip-address:</span> <span class="hljs-literal">true</span>		<span class="hljs-comment"># 是否使用ip地址注册</span>
+        <span class="hljs-attr">instance-id:</span> <span class="hljs-string">${spring.cloud.client.ip-address}:${server.port}</span> <span class="hljs-comment"># ip:port</span></code></pre></div>
+<p>再次访问展示如下：<br />
+<img src="/_resources/2c7a034444db406cbaba2d38b7f6102e.png" /></p>
+<h2 id="服务提供者eureka-provider">服务提供者eureka-provider</h2>
+<h3 id="添加依赖-3">添加依赖</h3>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span> <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-provider<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>jar<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">name</span>&gt;</span>eureka-provider<span class="hljs-tag">&lt;/<span class="hljs-name">name</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring eureka client 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot web 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  lombok依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.projectlombok<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>lombok<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>provided<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot test 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-test<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>test<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">exclusions</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">exclusion</span>&gt;</span>
+                    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.junit.vintage<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+                    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>junit-vintage-engine<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+                <span class="hljs-tag">&lt;/<span class="hljs-name">exclusion</span>&gt;</span>
+            <span class="hljs-tag">&lt;/<span class="hljs-name">exclusions</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span></code></pre></div>
+<h3 id="配置文件-3">配置文件</h3>
+<p>application.yml:</p>
+<div><pre class="hljs"><code><span class="hljs-attr">server:</span>
+  <span class="hljs-attr">port:</span> <span class="hljs-number">7070</span>
+<span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">application:</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">service-provider</span> <span class="hljs-comment"># 应用名称(集群下相同)</span>
+<span class="hljs-comment"># 配置Eureka Server注册中心</span>
+<span class="hljs-attr">eureka:</span>
+  <span class="hljs-attr">instance:</span>
+    <span class="hljs-attr">prefer-ip-address:</span> <span class="hljs-literal">true</span> <span class="hljs-comment"># 是否使用ip地址注册</span>
+    <span class="hljs-attr">instance-id:</span> <span class="hljs-string">${spring.cloud.client.ip-address}:${server.port}</span> <span class="hljs-comment"># ip:port</span>
+  <span class="hljs-attr">client:</span>
+    <span class="hljs-attr">service-url:</span> <span class="hljs-comment"># 设置服务注册中心地址</span>
+      <span class="hljs-attr">defaultZone:</span> <span class="hljs-string">http://localhost:8762/eureka/,http://localhost:8763/eureka/</span></code></pre></div>
+<h3 id="启动类代码">启动类代码</h3>
+<p>ServiceProviderApplication.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example;
+
+<span class="hljs-keyword">import</span> org.springframework.boot.SpringApplication;
+<span class="hljs-keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;
+
+<span class="hljs-comment">// 开启EurekaClient注解，目前版本如果配置了Eureka注册中心，默认会开启@EnableEurekaClient</span>
+<span class="hljs-comment">// @EnableEurekaClient</span>
+<span class="hljs-meta">@SpringBootApplication</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ServiceProviderApplication</span> {
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> {
+        SpringApplication.run(ServiceProviderApplication.class, args);
+    }
+}</code></pre></div>
+<h3 id="其他部分代码">其他部分代码</h3>
+<p>Product.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.pojo;
+
+
+<span class="hljs-keyword">import</span> lombok.AllArgsConstructor;
+<span class="hljs-keyword">import</span> lombok.Data;
+<span class="hljs-keyword">import</span> lombok.NoArgsConstructor;
+
+<span class="hljs-keyword">import</span> java.io.Serializable;
+
+<span class="hljs-meta">@Data</span>
+<span class="hljs-meta">@NoArgsConstructor</span>
+<span class="hljs-meta">@AllArgsConstructor</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Product</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> {
+
+    <span class="hljs-keyword">private</span> Integer id;
+    <span class="hljs-keyword">private</span> String productName;
+    <span class="hljs-keyword">private</span> Integer productNum;
+    <span class="hljs-keyword">private</span> Double productPrice;
+}</code></pre></div>
+<p>ProductService.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.service;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Product;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Service;
+
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-comment">/**
+ * 商品服务
+ * */</span>
+<span class="hljs-meta">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">ProductService</span> {
+    <span class="hljs-comment">/**
+     * 查询商品列表
+     *
+     * <span class="hljs-doctag">@return</span>
+     * */</span>
+    List&lt;Product&gt; <span class="hljs-title function_">selectProductList</span><span class="hljs-params">()</span>;
+}</code></pre></div>
+<p>ProductServiceImpl:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.service.impl;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Product;
+<span class="hljs-keyword">import</span> org.example.service.ProductService;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Service;
+
+<span class="hljs-keyword">import</span> java.util.Arrays;
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-meta">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ProductServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">ProductService</span> {
+    <span class="hljs-comment">/**
+     * 查询商品列表
+     *
+     * <span class="hljs-doctag">@return</span>
+     * */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> List&lt;Product&gt; <span class="hljs-title function_">selectProductList</span><span class="hljs-params">()</span> {
+        <span class="hljs-keyword">return</span> Arrays.asList(
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">Product</span>(<span class="hljs-number">1</span>, <span class="hljs-string">"华为手机"</span>, <span class="hljs-number">2</span>, <span class="hljs-number">5888D</span>),
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">Product</span>(<span class="hljs-number">2</span>, <span class="hljs-string">"联想笔记本"</span>, <span class="hljs-number">1</span>, <span class="hljs-number">6888D</span>),
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">Product</span>(<span class="hljs-number">3</span>, <span class="hljs-string">"小米平板"</span>, <span class="hljs-number">5</span>, <span class="hljs-number">2666D</span>)
+        );
+    }
+}</code></pre></div>
+<p>ProductController.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.controller;
+
+
+<span class="hljs-keyword">import</span> org.example.pojo.Product;
+<span class="hljs-keyword">import</span> org.example.service.ProductService;
+<span class="hljs-keyword">import</span> org.springframework.beans.factory.annotation.Autowired;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.GetMapping;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.RequestMapping;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.RestController;
+
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-meta">@RestController</span>
+<span class="hljs-meta">@RequestMapping("/product")</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ProductController</span> {
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> ProductService productService;
+
+    <span class="hljs-comment">/**
+     * 查询商品列表
+     *
+     * return
+     * */</span>
+    <span class="hljs-meta">@GetMapping("/list")</span>
+    <span class="hljs-keyword">public</span> List&lt;Product&gt; <span class="hljs-title function_">selectProductList</span><span class="hljs-params">()</span> {
+        <span class="hljs-keyword">return</span> productService.selectProductList();
+    }
+
+}</code></pre></div>
+<h3 id="启动">启动</h3>
+<p>注册中心启动后，再启动服务提供者，访问http://localhost:8762(或者http://localhost:8763)<br />
+<img src="/_resources/da3b4a00c7d446ac86d52ae941ced735.png" /></p>
+<p>可以看到eureka-provider服务顺利注册到服务注册中心。</p>
+<h3 id="测试">测试</h3>
+<p>访问http://localhost:7070/product/list</p>
+<h2 id="服务消费者eureka-consumer">服务消费者eureka-consumer</h2>
+<h3 id="添加依赖-4">添加依赖</h3>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span> <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-consumer<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>jar<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">name</span>&gt;</span>eureka-consumer<span class="hljs-tag">&lt;/<span class="hljs-name">name</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring eureka client 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-client<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot web 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  lombok依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.projectlombok<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>lombok<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>provided<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot test 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-test<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>test<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">exclusions</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">exclusion</span>&gt;</span>
+                    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.junit.vintage<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+                    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>junit-vintage-engine<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+                <span class="hljs-tag">&lt;/<span class="hljs-name">exclusion</span>&gt;</span>
+            <span class="hljs-tag">&lt;/<span class="hljs-name">exclusions</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span></code></pre></div>
+<h3 id="配置文件-4">配置文件</h3>
+<p>application.yml:</p>
+<div><pre class="hljs"><code><span class="hljs-attr">server:</span>
+  <span class="hljs-attr">port:</span> <span class="hljs-number">9090</span>
+<span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">application:</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">service-consumer</span> <span class="hljs-comment"># 应用名称(集群下相同)</span>
+<span class="hljs-comment"># 配置Eureka Server注册中心</span>
+<span class="hljs-attr">eureka:</span>
+<span class="hljs-comment">#  此处为了做演示，与生产情况有所简化，不将消费者服务注册到注册中心</span>
+<span class="hljs-comment">#  instance:</span>
+<span class="hljs-comment">#    prefer-ip-address: true # 是否使用ip地址注册</span>
+<span class="hljs-comment">#    instance-id: ${spring.cloud.client.ip-address}:${server.port} # ip:port</span>
+<span class="hljs-comment">#  client:</span>
+<span class="hljs-comment">#    service-url: # 设置服务注册中心地址</span>
+<span class="hljs-comment">#      defaultZone: http://localhost:8762/eureka/,http://localhost:8763/eureka/</span>
+ <span class="hljs-attr">client:</span>
+   <span class="hljs-attr">register-with-eureka:</span> <span class="hljs-literal">false</span>          <span class="hljs-comment"># 是否将自己注册到注册中心，默认为true</span>
+   <span class="hljs-attr">registry-fetch-interval-seconds:</span> <span class="hljs-number">10</span>  <span class="hljs-comment"># 表示Eureka Client间隔多久去服务器拉取注册信息，默认为30s</span>
+   <span class="hljs-attr">service-url:</span>                         <span class="hljs-comment"># 设置服务注册中心地址</span>
+     <span class="hljs-attr">defaultZone:</span> <span class="hljs-string">http://localhost:8762/eureka/,http://localhost:8763/eureka/</span></code></pre></div>
+<h3 id="启动类代码-2">启动类代码</h3>
+<p>ServiceConsumerApplication.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example;
+
+<span class="hljs-keyword">import</span> org.springframework.boot.SpringApplication;
+<span class="hljs-keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;
+<span class="hljs-keyword">import</span> org.springframework.context.annotation.Bean;
+<span class="hljs-keyword">import</span> org.springframework.web.client.RestTemplate;
+
+<span class="hljs-comment">// 开启EurekaClient注解，目前版本如果配置了Eureka注册中心，默认会开启@EnableEurekaClient</span>
+<span class="hljs-comment">// @EnableEurekaClient</span>
+<span class="hljs-meta">@SpringBootApplication</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ServiceConsumerApplication</span> {
+    <span class="hljs-meta">@Bean</span>
+    <span class="hljs-keyword">public</span> RestTemplate <span class="hljs-title function_">restTemplate</span><span class="hljs-params">()</span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RestTemplate</span>();
+    }
+
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> {
+        SpringApplication.run(ServiceConsumerApplication.class, args);
+    }
+}</code></pre></div>
+<blockquote>
+<p>Spring Boot不提供任何自动配置的<code>RestTemplate Bean</code>，所以需要在启动类中注入<code>RestTemplate</code></p>
+</blockquote>
+<h3 id="实体层代码">实体层代码</h3>
+<p>Product.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.pojo;
+
+
+<span class="hljs-keyword">import</span> lombok.AllArgsConstructor;
+<span class="hljs-keyword">import</span> lombok.Data;
+<span class="hljs-keyword">import</span> lombok.NoArgsConstructor;
+
+<span class="hljs-keyword">import</span> java.io.Serializable;
+
+<span class="hljs-meta">@Data</span>
+<span class="hljs-meta">@NoArgsConstructor</span>
+<span class="hljs-meta">@AllArgsConstructor</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Product</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> {
+
+    <span class="hljs-keyword">private</span> Integer id;
+    <span class="hljs-keyword">private</span> String productName;
+    <span class="hljs-keyword">private</span> Integer productNum;
+    <span class="hljs-keyword">private</span> Double productPrice;
+}</code></pre></div>
+<p>Order.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.pojo;
+
+<span class="hljs-keyword">import</span> lombok.AllArgsConstructor;
+<span class="hljs-keyword">import</span> lombok.Data;
+<span class="hljs-keyword">import</span> lombok.NoArgsConstructor;
+
+<span class="hljs-keyword">import</span> java.io.Serializable;
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-meta">@Data</span>
+<span class="hljs-meta">@NoArgsConstructor</span>
+<span class="hljs-meta">@AllArgsConstructor</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">Order</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">Serializable</span> {
+
+    <span class="hljs-keyword">private</span> Integer id;
+    <span class="hljs-keyword">private</span> String orderNo;
+    <span class="hljs-keyword">private</span> String orderAddress;
+    <span class="hljs-keyword">private</span> Double totalPrice;
+    <span class="hljs-keyword">private</span> List&lt;Product&gt; productList;
+}</code></pre></div>
+<h3 id="服务层代码">服务层代码</h3>
+<p>OrderService:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.service;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Order;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Service;
+
+<span class="hljs-meta">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">interface</span> <span class="hljs-title class_">OrderService</span> {
+
+    <span class="hljs-comment">/**
+     * 根据主键查询订单
+     *
+     * <span class="hljs-doctag">@param</span> id
+     * <span class="hljs-doctag">@return</span>
+     */</span>
+    Order <span class="hljs-title function_">selectOrderById</span><span class="hljs-params">(Integer id)</span>;
+}</code></pre></div>
+<h4 id="discoveryclientresttemplate">DiscoveryClient+RestTemplate</h4>
+<blockquote>
+<p>DiscoveryClient是Spring Cloud提供的服务发现客户端，用于与服务注册中心交互，获取可用的服务实例列表<br />
+RestTemplate是Spring提供的一个HTTP请求工具，使用Java自带的HttpUrlConnection或者经典的HttpClient也可以完成需求，只是在Spring项目中，使用RestTemplate显然更方便一些<br />
+在传统的项目架构中，因为不涉及服务之间的调用，对于RestTemplate的使用可能比较少</p>
+</blockquote>
+<p>OrderServiceImpl:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.service.impl;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Order;
+<span class="hljs-keyword">import</span> org.example.pojo.Product;
+<span class="hljs-keyword">import</span> org.example.service.OrderService;
+<span class="hljs-keyword">import</span> org.springframework.beans.factory.annotation.Autowired;
+<span class="hljs-keyword">import</span> org.springframework.cloud.client.ServiceInstance;
+<span class="hljs-keyword">import</span> org.springframework.cloud.client.discovery.DiscoveryClient;
+<span class="hljs-keyword">import</span> org.springframework.core.ParameterizedTypeReference;
+<span class="hljs-keyword">import</span> org.springframework.http.HttpMethod;
+<span class="hljs-keyword">import</span> org.springframework.http.ResponseEntity;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Service;
+<span class="hljs-keyword">import</span> org.springframework.util.CollectionUtils;
+<span class="hljs-keyword">import</span> org.springframework.web.client.RestTemplate;
+
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-meta">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">OrderService</span> {
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> RestTemplate restTemplate;
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> DiscoveryClient discoveryClient;
+
+    <span class="hljs-comment">/**
+     * 根据主键查询订单
+     *
+     * <span class="hljs-doctag">@param</span> id
+     * <span class="hljs-doctag">@return</span>
+     */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> Order <span class="hljs-title function_">selectOrderById</span><span class="hljs-params">(Integer id)</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Order</span>(id, <span class="hljs-string">"order-001"</span>, <span class="hljs-string">"中国"</span>, <span class="hljs-number">31994D</span>,
+                selectProductListByDiscoveryClient());
+    }
+
+    <span class="hljs-keyword">private</span> List&lt;Product&gt; <span class="hljs-title function_">selectProductListByDiscoveryClient</span><span class="hljs-params">()</span> {
+        <span class="hljs-type">StringBuffer</span> <span class="hljs-variable">sb</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+
+        <span class="hljs-comment">// 获取服务列表</span>
+        List&lt;String&gt; serviceIds = discoveryClient.getServices();
+        <span class="hljs-keyword">if</span> (CollectionUtils.isEmpty(serviceIds)){
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        }
+
+        <span class="hljs-comment">// 根据服务名称获取服务</span>
+        List&lt;ServiceInstance&gt; serviceInstances = discoveryClient.getInstances(<span class="hljs-string">"service-provider"</span>);
+        <span class="hljs-keyword">if</span> (CollectionUtils.isEmpty(serviceInstances)){
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        }
+
+        <span class="hljs-type">ServiceInstance</span> <span class="hljs-variable">si</span> <span class="hljs-operator">=</span> serviceInstances.get(<span class="hljs-number">0</span>);
+        sb = <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuffer</span>();
+        sb.append(<span class="hljs-string">"http://"</span> + si.getHost() + <span class="hljs-string">":"</span> + si.getPort() + <span class="hljs-string">"/product/list"</span>);
+
+        <span class="hljs-comment">// ResponseEntity：封装了返回数据</span>
+        ResponseEntity&lt;List&lt;Product&gt;&gt; response = restTemplate.exchange(
+                sb.toString(),
+                HttpMethod.GET,
+                <span class="hljs-literal">null</span>,
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">ParameterizedTypeReference</span>&lt;List&lt;Product&gt;&gt;() {}
+        );
+
+        <span class="hljs-keyword">return</span> response.getBody();
+    }
+}</code></pre></div>
+<h4 id="loadbalancerclient">LoadBalancerClient</h4>
+<p>OrderServiceImpl.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.service.impl;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Order;
+<span class="hljs-keyword">import</span> org.example.pojo.Product;
+<span class="hljs-keyword">import</span> org.example.service.OrderService;
+<span class="hljs-keyword">import</span> org.springframework.beans.factory.annotation.Autowired;
+<span class="hljs-keyword">import</span> org.springframework.cloud.client.ServiceInstance;
+<span class="hljs-keyword">import</span> org.springframework.cloud.client.discovery.DiscoveryClient;
+<span class="hljs-keyword">import</span> org.springframework.cloud.client.loadbalancer.LoadBalancerClient;
+<span class="hljs-keyword">import</span> org.springframework.core.ParameterizedTypeReference;
+<span class="hljs-keyword">import</span> org.springframework.http.HttpMethod;
+<span class="hljs-keyword">import</span> org.springframework.http.ResponseEntity;
+<span class="hljs-keyword">import</span> org.springframework.stereotype.Service;
+<span class="hljs-keyword">import</span> org.springframework.util.CollectionUtils;
+<span class="hljs-keyword">import</span> org.springframework.web.client.RestTemplate;
+
+<span class="hljs-keyword">import</span> java.util.List;
+
+<span class="hljs-meta">@Service</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderServiceImpl</span> <span class="hljs-keyword">implements</span> <span class="hljs-title class_">OrderService</span> {
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> RestTemplate restTemplate;
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> DiscoveryClient discoveryClient;
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> LoadBalancerClient loadBalancerClient;
+
+    <span class="hljs-comment">/**
+     * 根据主键查询订单
+     *
+     * <span class="hljs-doctag">@param</span> id
+     * <span class="hljs-doctag">@return</span>
+     */</span>
+    <span class="hljs-meta">@Override</span>
+    <span class="hljs-keyword">public</span> Order <span class="hljs-title function_">selectOrderById</span><span class="hljs-params">(Integer id)</span> {
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">Order</span>(id, <span class="hljs-string">"order-001"</span>, <span class="hljs-string">"中国"</span>, <span class="hljs-number">31994D</span>,
+<span class="hljs-comment">//                selectProductListByDiscoveryClient());</span>
+                selectProductListByLoadBalancerClient());
+    }
+
+    <span class="hljs-keyword">private</span> List&lt;Product&gt; <span class="hljs-title function_">selectProductListByDiscoveryClient</span><span class="hljs-params">()</span> {
+        <span class="hljs-type">StringBuffer</span> <span class="hljs-variable">sb</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+
+        <span class="hljs-comment">// 获取服务列表</span>
+        List&lt;String&gt; serviceIds = discoveryClient.getServices();
+        <span class="hljs-keyword">if</span> (CollectionUtils.isEmpty(serviceIds)){
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        }
+
+        <span class="hljs-comment">// 根据服务名称获取服务</span>
+        List&lt;ServiceInstance&gt; serviceInstances = discoveryClient.getInstances(<span class="hljs-string">"service-provider"</span>);
+        <span class="hljs-keyword">if</span> (CollectionUtils.isEmpty(serviceInstances)){
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        }
+
+        <span class="hljs-type">ServiceInstance</span> <span class="hljs-variable">si</span> <span class="hljs-operator">=</span> serviceInstances.get(<span class="hljs-number">0</span>);
+        sb = <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuffer</span>();
+        sb.append(<span class="hljs-string">"http://"</span> + si.getHost() + <span class="hljs-string">":"</span> + si.getPort() + <span class="hljs-string">"/product/list"</span>);
+
+        <span class="hljs-comment">// ResponseEntity：封装了返回数据</span>
+        ResponseEntity&lt;List&lt;Product&gt;&gt; response = restTemplate.exchange(
+                sb.toString(),
+                HttpMethod.GET,
+                <span class="hljs-literal">null</span>,
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">ParameterizedTypeReference</span>&lt;List&lt;Product&gt;&gt;() {}
+        );
+
+        <span class="hljs-keyword">return</span> response.getBody();
+    }
+
+    <span class="hljs-keyword">private</span> List&lt;Product&gt; <span class="hljs-title function_">selectProductListByLoadBalancerClient</span><span class="hljs-params">()</span>{
+        <span class="hljs-type">StringBuffer</span> <span class="hljs-variable">sb</span> <span class="hljs-operator">=</span> <span class="hljs-literal">null</span>;
+
+        <span class="hljs-comment">// 根据服务名称获取服务</span>
+        <span class="hljs-type">ServiceInstance</span> <span class="hljs-variable">si</span> <span class="hljs-operator">=</span> loadBalancerClient.choose(<span class="hljs-string">"service-provider"</span>);
+        <span class="hljs-keyword">if</span> (<span class="hljs-literal">null</span> == si){
+            <span class="hljs-keyword">return</span> <span class="hljs-literal">null</span>;
+        }
+
+        sb = <span class="hljs-keyword">new</span> <span class="hljs-title class_">StringBuffer</span>();
+        sb.append(<span class="hljs-string">"http://"</span> + si.getHost() + <span class="hljs-string">":"</span> + si.getPort() + <span class="hljs-string">"/product/list"</span>);
+
+        <span class="hljs-comment">// ResponseEntity: 封装了返回数据</span>
+        ResponseEntity&lt;List&lt;Product&gt;&gt; response = restTemplate.exchange(
+                sb.toString(),
+                HttpMethod.GET,
+                <span class="hljs-literal">null</span>,
+                <span class="hljs-keyword">new</span> <span class="hljs-title class_">ParameterizedTypeReference</span>&lt;List&lt;Product&gt;&gt;() {}
+        );
+        <span class="hljs-keyword">return</span> response.getBody();
+    }
+}</code></pre></div>
+<h4 id="loadbalanced">@LoadBalanced</h4>
+<p>启动类注入<code>RestTemplate</code>时添加<code>@LoadBalanced</code>负载均衡注解，表示这个<code>RestTemplate</code>在请求时拥有客户端负载均衡的能力。<br />
+ServiceConsumerApplication.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example;
+
+<span class="hljs-keyword">import</span> org.springframework.boot.SpringApplication;
+<span class="hljs-keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;
+<span class="hljs-keyword">import</span> org.springframework.context.annotation.Bean;
+<span class="hljs-keyword">import</span> org.springframework.web.client.RestTemplate;
+
+<span class="hljs-comment">// 开启EurekaClient注解，目前版本如果配置了Eureka注册中心，默认会开启@EnableEurekaClient</span>
+<span class="hljs-comment">// @EnableEurekaClient</span>
+<span class="hljs-meta">@SpringBootApplication</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">ServiceConsumerApplication</span> {
+    <span class="hljs-meta">@Bean</span>
+    <span class="hljs-meta">@LoadBalanced</span> <span class="hljs-comment">// 负载均衡注解</span>
+    <span class="hljs-keyword">public</span> RestTemplate <span class="hljs-title function_">restTemplate</span><span class="hljs-params">()</span>{
+        <span class="hljs-keyword">return</span> <span class="hljs-keyword">new</span> <span class="hljs-title class_">RestTemplate</span>();
+    }
+
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> {
+        SpringApplication.run(ServiceConsumerApplication.class, args);
+    }
+}</code></pre></div>
+<h3 id="控制层代码">控制层代码</h3>
+<p>OrderController.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example.controller;
+
+<span class="hljs-keyword">import</span> org.example.pojo.Order;
+<span class="hljs-keyword">import</span> org.example.service.OrderService;
+<span class="hljs-keyword">import</span> org.springframework.beans.factory.annotation.Autowired;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.GetMapping;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.PathVariable;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.RequestMapping;
+<span class="hljs-keyword">import</span> org.springframework.web.bind.annotation.RestController;
+
+<span class="hljs-meta">@RestController</span>
+<span class="hljs-meta">@RequestMapping("/order")</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">OrderController</span> {
+
+    <span class="hljs-meta">@Autowired</span>
+    <span class="hljs-keyword">private</span> OrderService orderService;
+
+    <span class="hljs-comment">/**
+     * 根据主键查询订单
+     *
+     * <span class="hljs-doctag">@param</span> id
+     * <span class="hljs-doctag">@return</span>
+     */</span>
+    <span class="hljs-meta">@GetMapping("/{id}")</span>
+    <span class="hljs-keyword">public</span> Order <span class="hljs-title function_">selectOrderById</span><span class="hljs-params">(<span class="hljs-meta">@PathVariable</span> (<span class="hljs-string">"id"</span>)</span> Integer id) {
+        <span class="hljs-keyword">return</span> orderService.selectOrderById(id);
+    }
+}</code></pre></div>
+<h3 id="启动-2">启动</h3>
+<p>访问http://localhost:9090/product/1<br />
+<img src="/_resources/5531534efbe64790a66f96e3e3027805.png" /></p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[3.1 Eureka服务注册中心]]></title>
+            <guid>184d74fe5a6d4e749daaa2e77bf8f894</guid>
+            <pubDate>Thu, 25 May 2023 01:02:07 GMT</pubDate>
+            <content:encoded><![CDATA[<h1 id="什么是eureka注册中心">什么是Eureka注册中心</h1>
+<p>Eureka是Netflix开发的服务发现组件，本身是一个基于REST的服务，Spring Cloud将它集成在其子项目Spring Cloud Netflix中，实现Spring Cloud的服务注册与发现，同时还提供了负载均衡、故障转移等能力。</p>
+<h1 id="eureka注册中心三种角色">Eureka注册中心三种角色</h1>
+<p><img src="/_resources/31bdad2214fe4552b9ef46c426fab7b4.png" /></p>
+<h2 id="eureka-server">Eureka Server</h2>
+<p>通过Register、Get、Renew等接口提供服务的注册和发现。</p>
+<h2 id="application-serviceservice-provide">Application Service(Service Provide)</h2>
+<p>服务提供方，把自身的服务实例注册到Eureka Server中。</p>
+<h2 id="application-clientservice-consumer">Application Client(Service Consumer)</h2>
+<p>服务调用方，通过Eureka Server获取服务列表、消费服务。</p>
+<p><img src="/_resources/baa948984792497094c0fc2b820f2418.png" /><br />
+0. 实例化服务</p>
+<ol>
+<li>将服务注册到注册中心</li>
+<li>注册中心收录服务</li>
+<li>从注册中心获取服务列表</li>
+<li>基于负载均衡算法从地址列表选择一个服务地址进行服务调用</li>
+<li>定期发送心跳</li>
+<li>检查没有定期发送心跳的服务并在一定时间内剔除服务地址列表</li>
+</ol>
+<h1 id="eureka入门案例">Eureka入门案例</h1>
+<h2 id="查看环境要求">查看环境要求</h2>
+<blockquote>
+<p>查看Spring Cloud对于Spring Boot的版本号要求</p>
+</blockquote>
+<p><img src="/_resources/1495b7b8804c4982877e95c8b39363e5.png" /></p>
+<p><img src="/_resources/4b751bc10b074641aef1e58f5119e1ea.png" /></p>
+<blockquote>
+<p>查看Spring Boot对于Maven和jdk的版本号要求</p>
+</blockquote>
+<p><img src="/_resources/af783753dcf243c1b23d7f0148b40057.png" /></p>
+<p><img src="/_resources/783fcc3bfdd94408aac8810481f979ce.png" /></p>
+<p><img src="/_resources/ce97c494b08a437a8ecacdd9de37cebe.png" /></p>
+<h2 id="创建项目">创建项目</h2>
+<p><img src="/_resources/08256c13be9546bcb373207854b37f47.png" /></p>
+<blockquote>
+<p>运行时jdk版本选用了8，因为19报错了（不知道谁不支持，暂时还没排查</p>
+</blockquote>
+<h2 id="添加依赖">添加依赖</h2>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-meta">&lt;?xml version="1.0" encoding="UTF-8"?&gt;</span>
+<span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span>
+         <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">modules</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">module</span>&gt;</span>eureka-server<span class="hljs-tag">&lt;/<span class="hljs-name">module</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">modules</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">properties</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">maven.compiler.source</span>&gt;</span>8<span class="hljs-tag">&lt;/<span class="hljs-name">maven.compiler.source</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">maven.compiler.target</span>&gt;</span>8<span class="hljs-tag">&lt;/<span class="hljs-name">maven.compiler.target</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">project.build.sourceEncoding</span>&gt;</span>UTF-8<span class="hljs-tag">&lt;/<span class="hljs-name">project.build.sourceEncoding</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">spring-cloud.version</span>&gt;</span>2022.0.2<span class="hljs-tag">&lt;/<span class="hljs-name">spring-cloud.version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">properties</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-parent<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>3.0.5<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">relativePath</span>/&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!--  项目依赖管理 父项目只是声明依赖，子项目需要写明需要的依赖（可以省略版本信息）  --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencyManagement</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+                <span class="hljs-comment">&lt;!--  spring cloud依赖  --&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-dependencies<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>${spring-cloud.version}<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">type</span>&gt;</span>pom<span class="hljs-tag">&lt;/<span class="hljs-name">type</span>&gt;</span>
+                <span class="hljs-tag">&lt;<span class="hljs-name">scope</span>&gt;</span>import<span class="hljs-tag">&lt;/<span class="hljs-name">scope</span>&gt;</span>
+            <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencyManagement</span>&gt;</span>
+
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span></code></pre></div>
+<blockquote>
+<p>此处重点在于Spring Boot的版本要与Spring Cloud兼容！！！</p>
+</blockquote>
+<h2 id="注册中心eureka-server">注册中心eureka-server</h2>
+<h3 id="创建项目-2">创建项目</h3>
+<p><img src="/_resources/8ceb87fe5a884f4a8e43934206e06548.png" /></p>
+<h3 id="添加依赖-2">添加依赖</h3>
+<p>pom.xml:</p>
+<div><pre class="hljs"><code><span class="hljs-tag">&lt;<span class="hljs-name">project</span> <span class="hljs-attr">xmlns</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0"</span> <span class="hljs-attr">xmlns:xsi</span>=<span class="hljs-string">"http://www.w3.org/2001/XMLSchema-instance"</span>
+         <span class="hljs-attr">xsi:schemaLocation</span>=<span class="hljs-string">"http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">modelVersion</span>&gt;</span>4.0.0<span class="hljs-tag">&lt;/<span class="hljs-name">modelVersion</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-server<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">packaging</span>&gt;</span>jar<span class="hljs-tag">&lt;/<span class="hljs-name">packaging</span>&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+
+    <span class="hljs-comment">&lt;!--  继承父依赖  --&gt;</span>
+    <span class="hljs-tag">&lt;<span class="hljs-name">parent</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.example<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>eureka-demo<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">version</span>&gt;</span>1.0-SNAPSHOT<span class="hljs-tag">&lt;/<span class="hljs-name">version</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">parent</span>&gt;</span>
+
+    <span class="hljs-tag">&lt;<span class="hljs-name">dependencies</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  spring boot web 依赖 --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.boot<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-boot-starter-web<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+        <span class="hljs-comment">&lt;!--  netflix eureka server 依赖  --&gt;</span>
+        <span class="hljs-tag">&lt;<span class="hljs-name">dependency</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">groupId</span>&gt;</span>org.springframework.cloud<span class="hljs-tag">&lt;/<span class="hljs-name">groupId</span>&gt;</span>
+            <span class="hljs-tag">&lt;<span class="hljs-name">artifactId</span>&gt;</span>spring-cloud-starter-netflix-eureka-server<span class="hljs-tag">&lt;/<span class="hljs-name">artifactId</span>&gt;</span>
+        <span class="hljs-tag">&lt;/<span class="hljs-name">dependency</span>&gt;</span>
+    <span class="hljs-tag">&lt;/<span class="hljs-name">dependencies</span>&gt;</span>
+<span class="hljs-tag">&lt;/<span class="hljs-name">project</span>&gt;</span>
+</code></pre></div>
+<h3 id="配置文件">配置文件</h3>
+<p>application.yml:</p>
+<div><pre class="hljs"><code><span class="hljs-attr">server:</span>
+  <span class="hljs-attr">port:</span>  <span class="hljs-comment"># 端口</span>
+<span class="hljs-attr">spring:</span>
+  <span class="hljs-attr">application:</span>
+    <span class="hljs-attr">name:</span> <span class="hljs-string">eureka-server</span> <span class="hljs-comment"># 应用名称</span>
+
+<span class="hljs-comment"># 配置Eureka Server 注册中心</span>
+<span class="hljs-attr">eureka:</span>
+  <span class="hljs-attr">instance:</span>
+    <span class="hljs-attr">hostname:</span> <span class="hljs-string">localhost</span>           <span class="hljs-comment"># 主机名，不配置的时候将根据操作系统的主机名来获取</span>
+  <span class="hljs-attr">client:</span>
+    <span class="hljs-attr">register-with-eureka:</span> <span class="hljs-literal">false</span>   <span class="hljs-comment"># 是否将自己注册注册中心，默认为true</span>
+    <span class="hljs-attr">fetch-registry:</span> <span class="hljs-literal">false</span>         <span class="hljs-comment"># 是否从注册中心获取服务注册信息，默认为true</span>
+    <span class="hljs-attr">service-url:</span>                  <span class="hljs-comment"># 注册中心对外暴露的注册地址</span>
+      <span class="hljs-attr">defaultZone:</span> <span class="hljs-string">http://${eureka.instance.hostname}:${server.port}/eureka/</span></code></pre></div>
+<p><code>Eureka</code>默认开启了将自己注册至注册中心和从注册中心获取服务注册信息的配置，如果该应用的角色是注册中心并且是单节点的话，要关闭这两个配置项。</p>
+<h3 id="启动类">启动类</h3>
+<p>EurekaServerApplication.java:</p>
+<div><pre class="hljs"><code><span class="hljs-keyword">package</span> org.example;
+
+<span class="hljs-keyword">import</span> org.springframework.boot.SpringApplication;
+<span class="hljs-keyword">import</span> org.springframework.boot.autoconfigure.SpringBootApplication;
+<span class="hljs-keyword">import</span> org.springframework.cloud.netflix.eureka.server.EnableEurekaServer;
+
+<span class="hljs-meta">@EnableEurekaServer</span>
+<span class="hljs-meta">@SpringBootApplication</span>
+<span class="hljs-keyword">public</span> <span class="hljs-keyword">class</span> <span class="hljs-title class_">EurekaServerApplication</span> {
+    <span class="hljs-keyword">public</span> <span class="hljs-keyword">static</span> <span class="hljs-keyword">void</span> <span class="hljs-title function_">main</span><span class="hljs-params">(String[] args)</span> {
+        SpringApplication.run(EurekaServerApplication.class);
+    }
+}
+</code></pre></div>
+<h3 id="访问">访问</h3>
+<p>访问http://localhost:8761，看到页面如下表示访问注册中心管理页面成功：<br />
+<img src="/_resources/18cc4c29cb534df79b5142ca9d788300.png" /></p>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[3 服务注册中心]]></title>
+            <guid>f3443a2ce8b341ef8e5d3bf64afaebca</guid>
+            <pubDate>Wed, 24 May 2023 14:22:54 GMT</pubDate>
+            <content:encoded><![CDATA[<h1 id="什么是服务注册中心">什么是服务注册中心</h1>
+<p>注册中心可以说是微服务架构中的“通讯录”，它记录了服务和服务地址的映射关系。在分布式架构中，服务会注册到这里，当服务需要调用其他服务时，就到这里找到服务的地址，进行调用。</p>
+<p>以现实生活举例：</p>
+<blockquote>
+<p>通讯里--服务注册中心；<br />
+我把张三的手机号存到通讯录中--服务注册；<br />
+我在通讯录中按照名字找到张三的手机号--服务发现。</p>
+</blockquote>
+<p>总结：服务注册中心的作用就是<strong>服务的注册</strong>和<strong>服务的发现</strong>。</p>
+<h1 id="常见的注册中心">常见的注册中心</h1>
+<ul>
+<li>Netflix Eureka</li>
+<li>Alibaba Nacos</li>
+<li>HashiCorp Consul</li>
+<li>Apache Zookeeper</li>
+<li>CoreOS Etcd</li>
+<li>CNCF CoreDNS</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>特性</td>
+<td>Eureka</td>
+<td>Nacos</td>
+<td>Consul</td>
+<td>Zookeeper</td>
+</tr>
+<tr>
+<td>CAP</td>
+<td>AP</td>
+<td>CP + AP</td>
+<td>CP</td>
+<td>CP</td>
+</tr>
+<tr>
+<td>健康检查</td>
+<td>Client Beat</td>
+<td>TCP/HTTP/MYSQL/Client Beat</td>
+<td>TCP/HTTP/gRPC/Cmd</td>
+<td>Keep Alive</td>
+</tr>
+<tr>
+<td>雪崩保护</td>
+<td>有</td>
+<td>有</td>
+<td>无</td>
+<td>无</td>
+</tr>
+<tr>
+<td>自动注销实例</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>访问协议</td>
+<td>HTTP</td>
+<td>HTTP/DNS</td>
+<td>HTTP/DNS</td>
+<td>TCP</td>
+</tr>
+<tr>
+<td>监听支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>多数据中心</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>跨注册中心同步</td>
+<td>不支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>Spring Cloud 集成</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+</tr>
+</tbody>
+</table>
+<h1 id="为什么需要注册中心">为什么需要注册中心</h1>
+<p>在分布式系统中，我们不仅仅是需要在注册中心找到服务和服务地址的映射关系那么简单，我们还需要考虑更多更复杂的问题：</p>
+<ul>
+<li>服务注册后，如何被及时发现</li>
+<li>服务宕机后，如何及时下线</li>
+<li>服务如何有效地水平扩展</li>
+<li>服务发现时如何进行路由</li>
+<li>服务异常时如何进行降级‘</li>
+<li>注册中心如何实现自身的高可用</li>
+</ul>
+<p>这些问题的解决都依赖于注册中心。简单看，注册中心的功能有点类似于DNS服务器或者负载均衡器，而实际上，注册中心作为微服务的基础组件，可能要更加复杂，也需要更多的灵活性和时效性。所以我们还需要学习更多Spring Cloud微服务组件协同完成应用开发。</p>
+<h1 id="注册中心解决了什么的问题">注册中心解决了什么的问题</h1>
+<ul>
+<li>服务管理</li>
+<li>服务的依赖关系管理</li>
+</ul>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[2 Spring Cloud简介]]></title>
+            <guid>d01334d68fb54e8d8201a1cbb52ddc4b</guid>
+            <pubDate>Wed, 24 May 2023 11:51:19 GMT</pubDate>
+            <content:encoded><![CDATA[<h1 id="概念定义">概念定义</h1>
+<p>Spring Cloud是一个服务治理平台，提供了一些服务框架。包含了：服务注册与发现、配置中心、消息中心、负载均衡、数据监控等。</p>
+<p>Spring Cloud是一个微服务框架，相比Dubbo等RPC框架，Spring Cloud提供了全套的分布式系统解决方案。</p>
+<p>Spring Cloud对微服务基础框架Netflix的多个开源组件进行了封装，同时又实现了和云端平台以及Spring Boot框架的集成。</p>
+<p>Spring Cloud是一个基于Spring Boot实现的云应用开发工具，它为开发中的配置管理、服务发现、断路器、智能路由、微代理、控制总线、全局锁、决策竞选、分布式会话和集群状态管理等操作提供了一种简单的开发方式。</p>
+<h1 id="子项目">子项目</h1>
+<p>Spring Cloud是一个开源的微服务框架，提供了一系列的子项目，这些子项目可以帮助开发人员构建、部署和管理分布式应用程序。其中，Spring Cloud Netflix和Spring Cloud Alibaba是最流行的两个子项目。</p>
+<h2 id="spring-cloud-netflix-第一代">Spring Cloud Netflix 第一代</h2>
+<blockquote>
+<p>Netflix是一家美国公司，在美国、加拿大提供互联网随选流媒体播放，定制DVD、蓝光光碟在线出租业务。该公司成立于1997年，总部位于加利福尼亚外州洛斯盖图，1999年开始订阅服务。2009年，该公司可提供多达10万部DVD电影，并有1千万的订户。2007年2月25日，Netflix宣布已经售出第10亿份DVD。HIS一份报告中表示，2011年Netflix网络电影销量占据美国用户在线电影总销量的45%。</p>
+</blockquote>
+<p>针对多种Netflix组件提供的开发工具包，其中包括Eureka、Hystrix、Ribbon、Zuul、Archaius等。</p>
+<ul>
+<li><code>Netflix Eureka</code>：一个基于REST服务的服务治理组件，包括服务注册中心、服务注册与服务发现机制的实现，实现了云端负载均衡和中间层服务器的故障转移。</li>
+<li><code>Netflix Hystrix</code>：容错管理工具，实现断路器模式，通过控制服务的节点，从而对延迟和故障提供更强大的容错能力</li>
+<li><code>Netflix Ribbon</code>：客户端负载均衡的服务调用组件</li>
+<li><code>Netflix Feign</code>：基于Ribbon和Hystrix的声明式服务调用组件</li>
+<li><code>Netflix Zuul</code>：微服务网关，提供动态路由，访问过滤等服务</li>
+<li><code>Netflix Archaius</code>：配置管理API，包含一系列配置管理API，提供动态类型化属性、线程安全配置操作、轮询框架、回调机制等功能</li>
+</ul>
+<h2 id="spring-cloud-alibaba-第二代">Spring Cloud Alibaba 第二代</h2>
+<p>Spring Cloud Alibaba致力于提供微服务开发的一站式解决方案。此项目包含开发分布式应用微服务的必需组件，方便开发者通过Spring Cloud编程模型轻松使用这些组件来开发分布式应用服务。</p>
+<p>依托Spring Cloud Alibaba，只需要添加一些注解和少量配置，就可以将Spring Cloud应用接入阿里微服务解决方案，通过阿里中间件来迅速搭建分布式应用系统。</p>
+<ul>
+<li><code>Nacos</code>：阿里巴巴开源产品，一个更易于构建云原生应用的动态服务发现、配置管理和服务管理平台</li>
+<li><code>Sentinel</code>：面向分布式服务架构的轻量级流量控制产品，把流量作为切入点，从流量控制、熔断降级、系统负载保护等多个维度保护服务的稳定性</li>
+<li><code>RocketMQ</code>：一款开源的分布式消息系统，基于高可用分布式集群技术，提供低延时的、高可靠的消息发布与订阅服务</li>
+<li><code>Dubbo</code>：Apache Dubbo是一款高性能Java RPC框架</li>
+<li><code>Seata</code>：阿里巴巴开源产品，一个易于使用的高性能微服务分布式事务解决方案</li>
+<li><code>Alibaba Cloud ACM</code>：一款在分布式架构环境中对应用配置进行集中管理和推送的应用配置中心产品</li>
+<li><code>Alibaba Cloud OSS</code>：阿里云对象存储服务（Object Storage Service，简称OSS），是阿里云提供的海量、安全、低成本、高可靠的云存储服务。开发者可以在任何应用、任何时间、任何地点存储和访问任意类型的数据</li>
+<li><code>Alibaba Cloud SchedulerX</code>：阿里中间件团队开发的一款分布式任务调度产品，提供秒级、精准、高可靠、高可用的定时（基于Cron表达式）任务调度服务</li>
+<li><code>Alibaba Cloud SMS</code>：覆盖全球的短信服务，友好、高效、智能的互联化通讯能力，帮助企业迅速搭建客户触达通道</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Spring Cloud Netflix</td>
+<td>Spring Cloud官方</td>
+<td>Spring Cloud Zookeeper</td>
+<td>Spring Cloud Consul</td>
+<td>Spring Cloud Kubernetes</td>
+<td>Spring Cloud Alibaba</td>
+</tr>
+<tr>
+<td>分布式配置</td>
+<td>Archaius</td>
+<td>Spring Cloud Config</td>
+<td>Zookeeper</td>
+<td>Consul</td>
+<td>ConfigMap</td>
+<td><strong>Nacos</strong></td>
+</tr>
+<tr>
+<td>服务注册/发现</td>
+<td>Eureka</td>
+<td>-</td>
+<td>Zookeeper</td>
+<td>-</td>
+<td>Api Server</td>
+<td><strong>Nacos</strong></td>
+</tr>
+<tr>
+<td>服务熔断</td>
+<td>Hystrix</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>Sentinel</strong></td>
+</tr>
+<tr>
+<td>服务调用</td>
+<td>Feign</td>
+<td>OpenFeign RestTemplate</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>Dubbo RPC</strong></td>
+</tr>
+<tr>
+<td>服务路由</td>
+<td>Zuul</td>
+<td>Spring Cloud Gateway</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>Dubbo PROXY</strong></td>
+</tr>
+<tr>
+<td>分布式消息</td>
+<td>-</td>
+<td>SCS RabbitMQ</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>SCS RocketMQ</strong></td>
+</tr>
+<tr>
+<td>负载均衡</td>
+<td>Ribbon</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>Dubbo LB</strong></td>
+</tr>
+<tr>
+<td>分布式事务</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td>-</td>
+<td><strong>Seata</strong></td>
+</tr>
+</tbody>
+</table>
+<h2 id="常用组件">常用组件</h2>
+<ul>
+<li><code>Spring Cloud Netflix Eureka</code>：服务注册中心</li>
+<li><code>Spring Cloud Netflix Ribbon</code>：客户端负载均衡</li>
+<li><code>Spring Cloud Netflix Hystrix</code>：服务容错保护</li>
+<li><code>Spring Cloud Netflix Feign</code>：声明式服务调用</li>
+<li><code>Spring Cloud OpenFeign（可替代Feign）</code>：OpenFeign是Spring Cloud在Feign的基础上支持了Spring MVC的注解，如@RequestMapping等。OpenFeign的@FeignClient可以解析SpringMVC的@RequestMapping注解下的接口，并通过动态代理的方式产生实现类，实现类中做负载均衡并调用其他服务。</li>
+<li><code>Spring Cloud Netflix Zuul</code>：API网关服务，过滤、安全、监控、限流、路由</li>
+<li><code>Spring Cloud Gateway（可替代Zuul）</code>：Spring Cloud Gateway是Spring官方基于Spring5.0，Spring Boot2.0和Project Reactor等技术开发的网关，Spring Cloud Gateway旨在为微服务架构提供一种简单而有效的统一的API路由管理方式。Spring Cloud Gateway作为Spring Cloud生态系中的网关，目标是替代Netflix Zuul，其不仅提供统一的路由方式，并且基于Filter链的方式提供了网关的基本功能，例如：安全、监控/埋点，和限流等</li>
+<li><code>Spring Cloud Config</code>：分布式配置中心。配置管理工具，支持使用Git存储配置内容，支持应用配置的外部化存储，支持客户端配置信息刷新、加解密配置内容等</li>
+<li><code>Spring Cloud Bus</code>：事件、消息总线，用于在集群（例如配置变化事件）中传播状态变化，可与Spring Cloud Config联合实现热部署</li>
+<li><code>Spring Cloud Stream</code>：消息驱动微服务</li>
+<li><code>Spring Cloud Sleuth</code>：分布式服务跟踪</li>
+<li><code>Spring Cloud Alibaba</code>：阿里巴巴结合自身微服务实践，开源的微服务全家桶。在Spring Cloud项目中孵化，很可能成为Spring Cloud第二代的标准实现。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Spring Cloud第一代</td>
+<td>状态</td>
+<td>Spring Cloud Alibaba</td>
+<td>状态</td>
+</tr>
+<tr>
+<td>Eureka</td>
+<td>2.0孵化失败</td>
+<td>Nacos Discovery</td>
+<td>性能强劲，感知更快</td>
+</tr>
+<tr>
+<td>Ribbon</td>
+<td>进入维护状态，预计2020年1月停止维护，新的标准已形成：Spring Cloud Loadbalancer，但暂无参考实现。Spring Cloud Hoxton才会孵化出替代品。</td>
+<td>Ribbon</td>
+<td>同前</td>
+</tr>
+<tr>
+<td>Hystrix/Hystrix Dashboard/Turbine</td>
+<td>进入维护状态，预计2020年1月停止维护</td>
+<td>Sentinel</td>
+<td>可视化配置，上手更简单</td>
+</tr>
+<tr>
+<td>Zuul</td>
+<td>进入维护状态，预计2020年1月停止维护</td>
+<td>Spring Cloud Gateway</td>
+<td>性能是Zuul的1.6倍</td>
+</tr>
+<tr>
+<td>Spring Cloud Config</td>
+<td>搭建复杂，约定多，设计繁重，没有界面，难以上手</td>
+<td>Nacos Config</td>
+<td>搭建简单，有可视化界面，配置管理更高效，学习曲线低</td>
+</tr>
+</tbody>
+</table>
+<h2 id="总结">总结</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td></td>
+<td>Spring Cloud 第一代</td>
+<td>Spring Cloud 第二代</td>
+</tr>
+<tr>
+<td>网关</td>
+<td>Spring Cloud Zuul</td>
+<td>Spring Cloud Gateway</td>
+</tr>
+<tr>
+<td>注册中心</td>
+<td>Eureka，Consul，Zookeeper</td>
+<td>阿里Nacos，拍拍贷Radar等可选</td>
+</tr>
+<tr>
+<td>配置中心</td>
+<td>Spring Cloud Config</td>
+<td>阿里Nacos，携程Apollo，随行付Config Keeper</td>
+</tr>
+<tr>
+<td>客户端负载均衡</td>
+<td>Ribbon</td>
+<td>spring-cloud-commons的Spring Cloud LoadBalancer</td>
+</tr>
+<tr>
+<td>熔断器</td>
+<td>Hystrix</td>
+<td>spring-cloud-rsj(Resilience4J)，阿里Sentinel</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>虽然Eureka，Hystrix等不再继续开发或维护，但是目前来说不影响使用，不管怎么说感谢开源，向Netflix公司的开源致敬</p>
+</blockquote>
+<h1 id="版本说明">版本说明</h1>
+<p><img src="/_resources/23dd3782cf534a4aa1325af524e3c794.png" /></p>
+<h2 id="为什么spring-cloud版本用的是单词而不是数字">为什么Spring Cloud版本用的是单词而不是数字</h2>
+<blockquote>
+<p>从Spring Cloud 2020.0.0开始，官方决定将版本号改为基于日期的格式，例如2020.0.0.M1。这样做的好处是，可以更加直观地反映出版本的发布时间和更新频率，便于开发者选择合适的版本进行使用。同时，基于日期的版本号也能够避免版本号重复的问题，提高了版本管理的效率。</p>
+</blockquote>
+<p>这样设计的目的是为了更好地管理每个Spring Cloud的子项目的清单。避免总版本号与子项目的版本号混淆。</p>
+<blockquote>
+<p>Spring Cloud 2.2.0.RELEASE的Spring Cloud Netflix 2.2.2.RELEASE 如果使用这种方式会让开发者混淆版本号</p>
+</blockquote>
+<h2 id="定义规则">定义规则</h2>
+<p>采用伦敦的地铁站名称来作为版本号的命名，根据首字母排序，字母顺序靠后的版本号越大。<br />
+Spring官方详细的版本查看接口：<a title="https://start.spring.io/actuator/info" href="https://start.spring.io/actuator/info"></a></p>
+<h2 id="发布计划">发布计划</h2>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>版本号</td>
+<td>版本</td>
+<td>说明</td>
+</tr>
+<tr>
+<td>BUILD-XXX</td>
+<td>开发版</td>
+<td>开发团队内部使用</td>
+</tr>
+<tr>
+<td>M</td>
+<td>里程碑版</td>
+<td>MileStone，M1表示第一个里程碑版本，一般同时标注PRE，表示预览版</td>
+</tr>
+<tr>
+<td>RC</td>
+<td>候选发布版</td>
+<td>Release Candidate，正式发布版的前一个观察期，不添加新功能，主要着重于除错</td>
+</tr>
+<tr>
+<td>SR</td>
+<td>正式发布版</td>
+<td>Service Release，SR1表示第一个正式版本，一般同时标注GA，表示稳定版本</td>
+</tr>
+<tr>
+<td>GA</td>
+<td>稳定版</td>
+<td>经过全面测试并可对外发行称之为GA（General Availability）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="子项目版本说明">子项目版本说明</h2>
+<p>例如：Spring Cloud Alibaba 2.1.0.RELEASE</p>
+<ul>
+<li>2：主版本号。当功能模块有较大更新或整体架构发生变化时，主版本号会更新</li>
+<li>1：此版本号。此版本表示只有局部的一些改动</li>
+<li>0：修改版本号。一般是bug的修复或者是小的变动</li>
+<li>RELEASE：希腊字母版本号。标注当前版本的软件处于哪个开发阶段</li>
+</ul>
+<h3 id="希腊字母版本说明">希腊字母版本说明</h3>
+<ul>
+<li>Base：设计阶段。只有相应的设计没有具体的功能实现</li>
+<li>Alpha：软件的初级版本。存在较多的bug</li>
+<li>Beta：表示相对Alpha有了很大的进步，消除了严重的bug，还存在一些潜在的bug</li>
+<li>Gamma：是Beta版做过一些修改，成为正式发布的候选版本（Release Candidate）</li>
+<li>Release：该版本表示最终版</li>
+</ul>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[1 微服务架构介绍]]></title>
+            <guid>0b0106261c2e4be6aba451e0c48db277</guid>
+            <pubDate>Wed, 24 May 2023 07:27:36 GMT</pubDate>
+            <content:encoded><![CDATA[<h1 id="技术架构演变">技术架构演变</h1>
+<h2 id="单一应用架构">单一应用架构</h2>
+<p>当网站流量很小时，只需要一个应用，将所有功能都部署在一起，以减少部署节点和成本。<br />
+此时，用于简化增删改查工作量的<code>数据访问框架（ORM）</code>是关键。<br />
+缺点：随着应用功能的增多，代码量越来越大，越来越难维护</p>
+<h2 id="垂直应用架构">垂直应用架构</h2>
+<p>当访问量逐渐增大，单一应用增加机器带来的加速度越来越小，将应用拆成互不相干的几个应用，以提升效率。<br />
+此时，用于加速前端页面开发的<code>Web框架（MVC）</code>是关键。<br />
+缺点：垂直架构中相同逻辑代码需要不断的复制，不能复用。每个垂直模块都相当于一个独立的系统。</p>
+<h2 id="分布式服务架构">分布式服务架构</h2>
+<p>当垂直应用越来越多，应用之间交互不可避免，将核心业务抽取出来，作为独立的服务，逐渐形成稳定的服务中心，使前端应用能更快速地响应多变的市场需求。<br />
+此时，用于提高业务复用及整合的<code>分布式框架（RPC）</code>是关键。<br />
+缺点：服务越来越多，需要管理每个服务的地址，调用关系错综复杂，难以理清依赖关系，服务状态难以管理，无法根据服务情况动态管理。</p>
+<h2 id="流动计算架构">流动计算架构</h2>
+<p>当服务越来越多，容量评估、小服务资源的浪费等问题逐渐显现，此时需增加一个调度中心基于访问压力实时管理集群容量，提高集群利用率。<br />
+此时，用于提高机器利用率的<code>资源调度和治理中心（SOA）</code>是关键。<br />
+缺点：服务间会有依赖关系，一旦某个环节出错会影响较大，服务关系复杂，运维、测试、部署困难，不符合DevOps思想。</p>
+<h2 id="微服务架构">微服务架构</h2>
+<ul>
+<li>单一职责：微服务中每一个服务都对应唯一的业务能力，做到单一职责</li>
+<li>微：微服务的服务拆分粒度很小，例如一个用户管理就可以作为一个服务。每个服务虽小，但“五脏俱全”。</li>
+<li>面向服务：面向服务是说每个服务都要对外暴露服务接口API，并不关心服务的技术实现，做到与平台和语言无关，也不限定用什么技术实现，只要提供Rest的接口即可。</li>
+<li>自治：服务间相互独立，互不干扰。
+<ul>
+<li>团队独立：每个服务都是一个独立的开发团队，人数不能过多
+<ul>
+<li>技术独立：因为是面向服务，提供Rest接口，使用什么技术没有别人干涉</li>
+<li>前后端分离：采用前后端分离开发，提供统一Rest接口，后端不用再为PC、移动端开发不同接口</li>
+<li>数据库分离：每个服务都使用自己的数据源</li>
+<li>部署独立：服务间虽然有调用，但要做到服务重启不影响其他服务，有利于持续集成和持续交付，每个服务都是独立的组件，可复用、可替换，降低耦合，易维护的Docker部署服务。</li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<h1 id="什么是微服务">什么是微服务</h1>
+<h2 id="微服务概念">微服务概念</h2>
+<p>微服务是一种软件架构模式，它将一个大型的应用程序拆分成多个小型、独立的服务，每个服务都运行在自己的进程中，通过轻量级通信机制相互协作，可以独立部署、扩展和管理。</p>
+<h2 id="优点">优点</h2>
+<ul>
+<li>简单灵活、独立部署</li>
+<li>专注、专业高效、可靠小团队</li>
+<li>松耦合、高内聚、易扩展</li>
+<li>语言工具无关</li>
+</ul>
+<h2 id="缺点">缺点</h2>
+<ul>
+<li>运维成本高、部署项目多</li>
+<li>接口兼容版本问题</li>
+<li>分布式系统的复杂性</li>
+<li>分布式事务</li>
+</ul>
+<h1 id="soa-vs微服务">SOA vs微服务</h1>
+<p>面向服务架构（SOA）是一种用于设计软件的伟大原则。在SOA中，所有组件都是独立自主的，并能为其他组件提供服务。</p>
+<p>大体上，SOA与微服务架构是非常相像的。</p>
+<ul>
+<li>微服务是细粒度的SOA组件，换句话说，某SOA组件可以被拆成多个微服务，而这些微服务通过分工协作，可以提供与原SOA组件相同级别的功能。</li>
+<li>微服务是细粒度的SOA组件，它们是关注点更窄的轻量级服务。微服务推崇执行的标准（例如HTTP）是人们广泛了解并共同使用的。我们可以通过选择合适的语言或工具来构建某个组件（微服务）。</li>
+<li>在技术栈与服务规模之外，SOA与微服务之间还有一个更大的区别：领域模型。在一个基于微服务的软件中，每个微服务应该在本地存储自身管理的数据，并将领域模型分别隔离到单个服务中，而在面向SOA的软件中，数据往往存储在单个大型的数据库中，服务之间会共享领域模型。</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>SOA</td>
+<td>微服务</td>
+</tr>
+<tr>
+<td>应用程序服务的可重用性的最大化</td>
+<td>专注于解耦</td>
+</tr>
+<tr>
+<td>系统性的改变需要修改整体</td>
+<td>系统性的改变是创建一个新的服务</td>
+</tr>
+<tr>
+<td>DevOps和持续交付正在变得流行，但还不是主流</td>
+<td>强烈关注DevOps和持续交付</td>
+</tr>
+<tr>
+<td>专注于业务功能重用</td>
+<td>更重视“上下文边界”的概念</td>
+</tr>
+<tr>
+<td>通信使用企业服务总线ESB（Enterprise Service Bus）</td>
+<td>对于通信而言，使用较少精细和简单的消息系统</td>
+</tr>
+<tr>
+<td>支持多种消息协议</td>
+<td>使用轻量级协议，例如HTTP，REST或Thrift API</td>
+</tr>
+<tr>
+<td>对部署到它的所有服务使用通用平台</td>
+<td>应用程序服务器不是真的被使用，通常使用云平台</td>
+</tr>
+<tr>
+<td>容器（如Docker）的使用不太受欢迎</td>
+<td>容器在微服务方面效果很好</td>
+</tr>
+<tr>
+<td>SOA共享数据存储</td>
+<td>每个微服务可以有一个独立的数据存储</td>
+</tr>
+<tr>
+<td>共同的治理和标准</td>
+<td>轻松的治理，更加关注团队协作和选择自由</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>一句话总结：微服务是SOA发展出来的产物，它是一种比较现代化的细粒度的SOA实现方式</p>
+</blockquote>
+<h1 id="dubbo-vs-spring-cloud">Dubbo vs Spring Cloud</h1>
+<ul>
+<li>
+<p>Dubbo：很多国内的企业还在用，可以支持RESRful风格的API，调用远程API像调用本地API一样，同时其基于接口方式增加了服务间的耦合</p>
+</li>
+<li>
+<p>Spring全家桶：用起来很舒服，只有你想不到，没有它做不到</p>
+</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>对比项</td>
+<td>Spring Cloud</td>
+<td>Dubbo</td>
+</tr>
+<tr>
+<td>服务注册中心</td>
+<td>Spring Cloud NetFlix Eureka</td>
+<td>Zookeeper，Nacos</td>
+</tr>
+<tr>
+<td>服务调用方式</td>
+<td>REST API</td>
+<td>RPC</td>
+</tr>
+<tr>
+<td>服务网关</td>
+<td>Spring Cloud Netflix Zuul</td>
+<td>Dubbo Proxy</td>
+</tr>
+<tr>
+<td>服务熔断</td>
+<td>Spring Cloud Netflix Hysrix</td>
+<td>Sentinel</td>
+</tr>
+<tr>
+<td>分布式配置</td>
+<td>Spring Cloud Config</td>
+<td>Nacos</td>
+</tr>
+<tr>
+<td>服务跟踪</td>
+<td>Spring Cloud Sleuth</td>
+<td>无</td>
+</tr>
+<tr>
+<td>消息总线</td>
+<td>Spring Cloud Bus</td>
+<td>无</td>
+</tr>
+<tr>
+<td>数据流</td>
+<td>Spring Cloud Stream</td>
+<td>无</td>
+</tr>
+<tr>
+<td>批量任务</td>
+<td>Spring Cloud Task</td>
+<td>无</td>
+</tr>
+</tbody>
+</table>
+<p>总结：</p>
+<ul>
+<li>Dubbo由于是二进制传输，占用带宽更少；Spring Cloud是http协议传输，带宽会比较多，同时使用http协议一般会使用JSON报文，消耗会更大</li>
+<li>Dubbo开发难度较大，原因是Dubbo的jar包依赖问题很多大型工程无法解决</li>
+<li>Spring Cloud的接口协议约定比较自由松散，需要有强有力的行政措施来限制接口无序升级</li>
+<li>Dubbo的注册中心可以选择Zookeeper Redis等多种，Spring Cloud的注册中心只能用Eureka或者自研（现在也对一些其他的系统有支持，比如nacos等）</li>
+<li>从系统结构简易程序：Spring Cloud的系统结构更简单，“注册+Spring MVC = Spring Cloud”，而Dubbo各种复杂的url，protocol，register，invocation，dubbofilter，dubboSPI，dubbo序列化......炫技的成分更多一些</li>
+<li>从性能：Dubbo的网络消耗小于Spring Cloud，但是在国内95%的公司内，网络消耗不是什么大问题，如果真的成了问题，通过压缩、二进制、高速缓存、分段降级等方法，很容易解决。</li>
+</ul>
+<h1 id="微服务设计原则">微服务设计原则</h1>
+<h2 id="akf拆分原则">AKF拆分原则</h2>
+<p>业界对于可扩展的系统架构设计有一个朴素的理念，就是：通过加机器可以解决容量和可用性问题（如果一台不行就两台）。</p>
+<p>这一理念在“云计算”概念疯狂流行的今天，得到了广泛的认可。对于一个规模迅速增长的系统而言，容量和性能问题自然是首当其冲，但是随着时间向前，系统规模的增长，除了面对性能和容量的问题外，还需要面对功能与模块数量上增长带来的系统复杂性问题。以及业务变化带来的提供差异化服务问题。许多系统在架构设计时并未充分考虑这些问题，导致系统的重构成为常态，从而影响业务交付能力，还浪费人力财力。对此《The Art of Scalability》一书提出了一个更加系统的可扩展模型——AKF扩展立方。</p>
+<p><img src="/_resources/2f72f0296733456ea0063dd5d6182e7f.png" /></p>
+<p>一个叫AKF的公司的技术专家抽象总结的应用扩展的三个维度。理论上按照这三个扩展模式，可以将一个单体系统，进行无限扩展。</p>
+<ul>
+<li>x轴：指水平复制。运行多个单体系统的实例，使它们成为集群加负载均衡的模式；</li>
+<li>z轴：指数据分区。按照用户请求的地区进行数据分区，在不同的地区建立各自的集群提供服务；</li>
+<li>y轴：指微服务的业务拆分。按照业务将系统拆分为不同的服务，每个服务独立维护并且各自都可以再次按需扩展。</li>
+</ul>
+<h2 id="前后端分离原则">前后端分离原则</h2>
+<ul>
+<li>前后端技术分离，可以由各自的专家来对各自的领域进行优化，这样前端的用户体验优化效果更好</li>
+<li>前后端分离模式下，前后端交互界面更清晰，就剩下了接口模型，后端的接口简洁明了，更容易维护</li>
+<li>前端多渠道集成场景更容易实现，后端服务无需变更，采用统一的数据和模型，可以支持多个前端，例如：微信h5端、PC端、安卓端、IOS端</li>
+</ul>
+<h2 id="无状态服务">无状态服务</h2>
+<p><img src="/_resources/35f6ba21eb6e4b228a0a027ab318b531.png" /></p>
+<p>无状态服务是指微服务架构中的一种服务类型，它不保存任何会话状态或上下文信息，并且可以在任何时刻对其进行水平扩展。</p>
+<p>无状态服务通常只处理请求并返回响应，不保留任何与请求相关的状态信息。这意味着，无论是第一次请求还是后续的请求，都将被独立地处理，服务本身不会记录任何关于先前请求的信息。由于无状态服务没有会话状态和上下文信息，因此它们可以轻松实现负载均衡和水平扩展，从而提高系统的可伸缩性和可用性。</p>
+<p>无状态服务并不是说在微服务架构中不允许存在状态，表达的真实意思是要把有状态的业务服务改变为无状态的计算类服务，将状态数据相应地迁移到对应的“有状态数据服务”中。</p>
+<p>举个例子，以前在本地内存中建立的数据缓存、Session缓存，到现在的微服务架构中就应该把这些数据迁移到分布式缓存中存储，让业务服务变成一个无状态的计算节点。迁移后，微服务应用在运行时动态增删节点不再需要考虑缓存数据如何同步的问题，可以做到按需动态伸缩。</p>
+<h2 id="restful通信风格">RESTful通信风格</h2>
+<p>基于“无状态通信原则”，我们直接推荐一个实践优选的RESTful通信风格，因为它有很多好处：</p>
+<ul>
+<li>无状态协议HTTP，具备先天优势，扩展能力很强。例如需要安全加密，有现成的成熟方案HTTPS可用；</li>
+<li>JSON报文序列化，轻量简单，人与机器均可读，学习成本低，搜索引擎友好</li>
+<li>语言无关，各大热门语言都提供成熟的RESTful API框架，相对其他的一些RPC框架生态更完善</li>
+</ul>
+]]></content:encoded>
+        </item>
+        <item>
+            <title><![CDATA[0.springCloud的演示概述]]></title>
+            <guid>2c199db4bca84d46be03362afe8def1e</guid>
+            <pubDate>Wed, 24 May 2023 01:22:15 GMT</pubDate>
+            <content:encoded><![CDATA[<blockquote>
+<p>参考：<a title="https://www.bilibili.com/video/BV1ez4y1D7w6" href="https://www.bilibili.com/video/BV1ez4y1D7w6">https://www.bilibili.com/video/BV1ez4y1D7w6</a></p>
+</blockquote>
+<p>A开了一家饭店，厨师、跑堂、收银全是自己一个人干，并且开发了一套管理系统管理饭店。<br />
+随着饭店规模扩大，A开始忙不过来，招聘了一个厨师、跑堂、收银、程序员来替自己工作。</p>
+<blockquote>
+<p>多个微服务对外提供访问</p>
+</blockquote>
+<p>随着饭店规模扩大，员工也不够用了，A继续招人，但是出现了新的问题，客人们不知道叫哪个跑堂点菜，于是A决定使用“服务注册中心”——A为店里的每个员工和餐桌都配备了一个pad，员工把自己的情况、能完成的任务都告诉Eureka，客人点餐也通过pad而不是指定员工，点完菜后pad将客人的请求发送给厨师，厨师炒完菜后告诉跑堂，跑堂将菜端给客人。</p>
+<blockquote>
+<p>使用服务注册中心进行管理，代表产品为Netflix的Eureka</p>
+</blockquote>
+<p>新的问题又出现了，客人点完菜后有俩厨师，如何决定让谁炒菜，于是A决定使用“负载均衡”机制——以轮询方案为例，客人叫的第一个菜让第一个厨师炒，第二个菜让第二个厨师炒，第三个菜让第一个厨师炒，以此类推；如果厨师之间效率有差别，还可以灵活规定轮到厨师炒菜的机会。</p>
+<blockquote>
+<p>使用负载均衡进行管理，代表产品为Netflix的Ribbon，它使用轮询机制</p>
+</blockquote>
+<p>新的问题又出现了，程序员发现这些服务之间的调用过于复杂，需要写一堆代码与其他微服务建立网络连接，然后调用复杂的请求，接着发送请求过去，最后再根据对方返回的响应结果，再写一大堆代码进行处理，如何简化代码，于是程序员决定使用“服务调用简化器”。</p>
+<blockquote>
+<p>使用服务调用简化器进行服务调用的简化，代表产品为Netflix的Feign，只需要用注解定义一个叫做FeignClient的接口，然后就可以像调用本地方法一样方便了，Feign会在底层根据注解，自己把建立连接、构造请求、发送请求、获取响应、解析响应这些脏活累活都给干了。</p>
+</blockquote>
+<p>某天用餐高峰期，厨房的天然气总阀坏了，厨师无法炒菜，餐桌上的客人在等待上餐，而店外的客人还在不断进入，最后导致饭店陷入瘫痪状态。一旦某个微服务因为各种各样的原因不能提供服务，是否应该迅速提供一个友好的返回提示，比如告诉饭店内的客人不要再等待，饭店外的客人不要再进入了？为了防止类似的情况发生，A决定使用“服务降级与熔断机制”。</p>
+<blockquote>
+<p>使用服务降级与熔断机制来处理服务器高压的情况，代表产品为Netflix提供的Hystrix，Hystrix会创建许多小的线程池，比如厨师是一个线程池，跑堂是一个线程池等，他们共同对外提供服务。当出现某些特殊情况导致厨师无法提供炒菜服务了，客人点菜的时候直接返回不能炒菜的友好回答，而不是等待很久什么结果也返回不了，这就是熔断。厨师还可以安抚性地给客人一小碟事先已经炒好的花生米，但是菜是炒不了了，这就是降级。</p>
+</blockquote>
+<p>A开始开分店，并且为自己的系统增加外卖业务，随着而来是新的问题，客户登录A的系统进行点餐时，需要自己去选饭店地址，但每个店的人流量可能不同，造成了资源分布的极不平均，为了解决这个问题，A决定在整个系统的外面加一层“网关”。</p>
+<blockquote>
+<p>使用网关进行管理，代表产品为Netflix的Zuul，客人需要先在A的系统里注册一个账号，当他想点外卖的时候，只需要告诉系统他想吃什么，Zuul根据客人点菜的时间、种类、位置以及现在分店的繁忙程度等信息来自动查找哪个分店更适合为他服务。</p>
+</blockquote>
+<p>某天A到外地考察，学会了一道新菜想要让自己的厨师们也学会，如果到每个分店去教太耗费A的精力，不如A将炒菜的过程录下来，上传到系统里再打电话通知每个厨师自己去观看，不仅可以节省A的时间，厨师也可以在自己不忙的时间去自主学习，于是A决定给系统增加一个“配置中心”。</p>
+<blockquote>
+<p>使用配置中心进行配置，代表产品为SpringCloud提供的Config</p>
+</blockquote>
+<p>A学到了更多的新菜，但是再一个个打电话通知每个厨师去学习过于麻烦，于是他决定使用“总线”机制。</p>
+<blockquote>
+<p>使用总线进行通知管理，代表产品为SprignCloud的Bus，总线使用了利用了消息机制，当A上传好做菜视频的时候，系统自动给所有厨师发送消息，厨师们收到广播推送的消息时就可以去自主学习。Bus支持的消息队列有RabbitMQ和kafka。</p>
+</blockquote>
+<p>之后饭店规模不断扩大，但是再也没出过大的问题。可喜可贺，可喜可贺。</p>
+<hr />
+<p>以下为原来的整理</p>
+<p>A开了一家饭店，厨师、跑堂、收银全是自己一个人干，并且开发了一套管理系统管理饭店。</p>
+<p>随着饭店规模扩大，A开始忙不过来，招聘了一个厨师、跑堂、收银、程序员来替自己工作，对外提供服务。</p>
+<p>随着饭店规模扩大，员工也不够用了，A继续招人，但是出现了新的问题，客人们不知道叫哪个跑堂点菜，于是A决定上一套“服务注册中心”来管理。</p>
+<p>通过使用Netflix提供的Eureka技术，解决了服务注册中心的问题。A为店里的每个员工和餐桌都配备了一个pad，员工把自己的情况、能完成的任务都告诉Eureka，客人点餐也通过pad而不是指定员工，点完菜后pad将客人的请求发送给厨师，厨师炒完菜后告诉跑堂，跑堂将菜端给客人。</p>
+<p>新的问题又出现了，客人点完菜后有俩厨师，如何决定让谁炒菜，于是A决定使用“负载均衡”机制。</p>
+<p>通过使用Netflix提供的Ribbon，解决了负载均衡的问题。Ribbon使用轮询机制，客人叫的第一个菜让第一个厨师炒，第二个菜让第二个厨师炒，第三个菜让第一个厨师炒，以此类推。如果厨师之间效率有差别，还可以灵活规定轮到厨师炒菜的机会。</p>
+<p>新的问题又出现了，程序员发现这些服务之间的调用过于复杂，需要写一堆代码与其他微服务建立网络连接，然后调用复杂的请求，接着发送请求过去，最后再根据对方返回的响应结果，再写一大堆代码进行处理，如何简化代码，于是程序员决定使用“服务调用简化器”。</p>
+<p>通过使用Netflix提供的Feign，只需要用注解定义一个叫做FeignClient的接口，然后就可以像调用本地方法一样方便了，Feign会在底层根据注解，自己把建立连接、构造请求、发送请求、获取响应、解析响应这些脏活累活都给干了。</p>
+<p>某天用餐高峰期，厨房的天然气总阀坏了，厨师无法炒菜，餐桌上的客人在等待上餐，而店外的客人还在不断进入，最后导致饭店陷入瘫痪状态。一旦某个微服务因为各种各样的原因不能提供服务，是否应该迅速提供一个友好的返回提示，比如告诉饭店内的客人不要再等待，饭店外的客人不要再进入了？为了防止类似的情况发生，A决定使用“服务降级与熔断机制”。</p>
+<p>通过使用Netflix提供的Hystrix，Hystrix会创建许多小的线程池，比如厨师是一个线程池，跑堂是一个线程池等，他们共同对外提供服务。当出现某些特殊情况导致厨师无法提供炒菜服务了，客人点菜的时候直接返回不能炒菜的友好回答，而不是等待很久什么结果也返回不了，这就是熔断。厨师还可以安抚性地给客人一小碟事先已经炒好的花生米，但是菜是炒不了了，这就是降级。</p>
+<p>A开始开分店，并且为自己的系统增加外卖业务，随着而来是新的问题，客户登录A的系统进行点餐时，需要自己去选饭店地址，但每个店的人流量可能不同，造成了资源分布的极不平均，为了解决这个问题，A决定在整个系统的外面加一层“网关”。</p>
+<p>通过使用Netflix提供的Zuul，客人需要先在A的系统里注册一个账号，当他想点外卖的时候，只需要告诉系统他想吃什么，Zuul根据客人点菜的时间、种类、位置以及现在分店的繁忙程度等信息来自动查找哪个分店更适合为他服务。</p>
+<p>某天A到外地考察，学会了一道新菜想要让自己的厨师们也学会，如果到每个分店去教太耗费A的精力，不如A将炒菜的过程录下来，上传到系统里再打电话通知每个厨师自己去观看，不仅可以节省A的时间，厨师也可以在自己不忙的时间去自主学习，于是A决定给系统增加一个“配置中心”。</p>
+<p>这个配置中心使用了SpringCloud提供的Config。</p>
+<p>A学到了更多的新菜，但是再一个个打电话通知每个厨师去学习过于麻烦，于是他决定使用“总线”机制。</p>
+<p>总线使用了SprignCloud提供的Bus利用了消息机制，当A上传好做菜视频的时候，系统自动给所有厨师发送消息，厨师们收到广播推送的消息时就可以去自主学习。Bus支持的消息队列有RabbitMQ和kafka。</p>
+<p>之后饭店规模不断扩大，但是再也没出过大的问题。可喜可贺，可喜可贺。</p>
+]]></content:encoded>
+        </item>
+    </channel>
+</rss>

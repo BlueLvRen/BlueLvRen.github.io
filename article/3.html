@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<meta http-equiv="X-UA-Compatible" content="ie=edge" />
+<link rel="stylesheet" href="/_assets/main.css" />
+
+    <title>3 服务注册中心 - Joplin Note By BlueLvRen</title>
+  </head>
+  <body>
+    <div class="main">
+      <nav class="navigation">
+        <a href="/">Joplin Note By BlueLvRen</a>
+      </nav>
+      <article>
+        <header>
+          <h1 class="article-title">3 服务注册中心</h1>
+          <div class="article-info">
+            <div>
+              <span
+                >Created At：<time datetime="1684938174383"
+                  >2023-05-24 22:22</time
+                ></span
+              >
+              <span
+                >Updated At：<time datetime="1684976589036"
+                  >2023-05-25 09:03</time
+                ></span
+              >
+            </div>
+            
+          </div>
+        </header>
+        <div class="article-content markdown-body"><h1 id="什么是服务注册中心">什么是服务注册中心</h1>
+<p>注册中心可以说是微服务架构中的“通讯录”，它记录了服务和服务地址的映射关系。在分布式架构中，服务会注册到这里，当服务需要调用其他服务时，就到这里找到服务的地址，进行调用。</p>
+<p>以现实生活举例：</p>
+<blockquote>
+<p>通讯里--服务注册中心；<br />
+我把张三的手机号存到通讯录中--服务注册；<br />
+我在通讯录中按照名字找到张三的手机号--服务发现。</p>
+</blockquote>
+<p>总结：服务注册中心的作用就是<strong>服务的注册</strong>和<strong>服务的发现</strong>。</p>
+<h1 id="常见的注册中心">常见的注册中心</h1>
+<ul>
+<li>Netflix Eureka</li>
+<li>Alibaba Nacos</li>
+<li>HashiCorp Consul</li>
+<li>Apache Zookeeper</li>
+<li>CoreOS Etcd</li>
+<li>CNCF CoreDNS</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+<th></th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>特性</td>
+<td>Eureka</td>
+<td>Nacos</td>
+<td>Consul</td>
+<td>Zookeeper</td>
+</tr>
+<tr>
+<td>CAP</td>
+<td>AP</td>
+<td>CP + AP</td>
+<td>CP</td>
+<td>CP</td>
+</tr>
+<tr>
+<td>健康检查</td>
+<td>Client Beat</td>
+<td>TCP/HTTP/MYSQL/Client Beat</td>
+<td>TCP/HTTP/gRPC/Cmd</td>
+<td>Keep Alive</td>
+</tr>
+<tr>
+<td>雪崩保护</td>
+<td>有</td>
+<td>有</td>
+<td>无</td>
+<td>无</td>
+</tr>
+<tr>
+<td>自动注销实例</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>访问协议</td>
+<td>HTTP</td>
+<td>HTTP/DNS</td>
+<td>HTTP/DNS</td>
+<td>TCP</td>
+</tr>
+<tr>
+<td>监听支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+</tr>
+<tr>
+<td>多数据中心</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>跨注册中心同步</td>
+<td>不支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>不支持</td>
+</tr>
+<tr>
+<td>Spring Cloud 集成</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+<td>支持</td>
+</tr>
+</tbody>
+</table>
+<h1 id="为什么需要注册中心">为什么需要注册中心</h1>
+<p>在分布式系统中，我们不仅仅是需要在注册中心找到服务和服务地址的映射关系那么简单，我们还需要考虑更多更复杂的问题：</p>
+<ul>
+<li>服务注册后，如何被及时发现</li>
+<li>服务宕机后，如何及时下线</li>
+<li>服务如何有效地水平扩展</li>
+<li>服务发现时如何进行路由</li>
+<li>服务异常时如何进行降级‘</li>
+<li>注册中心如何实现自身的高可用</li>
+</ul>
+<p>这些问题的解决都依赖于注册中心。简单看，注册中心的功能有点类似于DNS服务器或者负载均衡器，而实际上，注册中心作为微服务的基础组件，可能要更加复杂，也需要更多的灵活性和时效性。所以我们还需要学习更多Spring Cloud微服务组件协同完成应用开发。</p>
+<h1 id="注册中心解决了什么的问题">注册中心解决了什么的问题</h1>
+<ul>
+<li>服务管理</li>
+<li>服务的依赖关系管理</li>
+</ul>
+</div>
+      </article>
+    </div>
+  </body>
+</html>
